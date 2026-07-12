@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Base64 decoding helper
 function base64UrlDecode(str: string): Uint8Array {
   let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
   while (base64.length % 4) {
@@ -14,6 +15,7 @@ function base64UrlDecode(str: string): Uint8Array {
   return arr;
 }
 
+// Decode JWT payload
 function decodeJwtPayload(token: string): any {
   try {
     const parts = token.split(".");
@@ -26,6 +28,7 @@ function decodeJwtPayload(token: string): any {
   }
 }
 
+// Verify JWT signature and expiration
 async function verifyJwt(token: string, secret: string): Promise<boolean> {
   const parts = token.split(".");
   if (parts.length !== 3) return false;
@@ -63,10 +66,7 @@ async function verifyJwt(token: string, secret: string): Promise<boolean> {
 }
 
 export async function proxy(request: NextRequest) {
-  // Only intercept API endpoints to keep pages working normally
-  if (!request.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
+  const { pathname } = request.nextUrl;
 
   // Retrieve token from cookies or Authorization header
   let token = request.cookies.get("accessToken")?.value;
@@ -78,30 +78,64 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const requestHeaders = new Headers(request.headers);
-
+  // Verify token validity
+  let isValid = false;
+  let payload: any = null;
   if (token) {
     const secret = process.env.JWT_ACCESS_SECRET || "default_secret";
-    const isValid = await verifyJwt(token, secret);
-    
+    isValid = await verifyJwt(token, secret);
     if (isValid) {
-      const payload = decodeJwtPayload(token);
-      if (payload && payload.id) {
-        requestHeaders.set("x-user-id", payload.id);
-        requestHeaders.set("x-user-email", payload.email || "");
-        requestHeaders.set("x-user-username", payload.username || "");
-        requestHeaders.set("x-user-verified", String(payload.is_verified || false));
-      }
+      payload = decodeJwtPayload(token);
     }
   }
 
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  // 1. Handle API routes
+  if (pathname.startsWith("/api/")) {
+    const requestHeaders = new Headers(request.headers);
+    if (isValid && payload) {
+      requestHeaders.set("x-user-id", payload.id);
+      requestHeaders.set("x-user-email", payload.email || "");
+      requestHeaders.set("x-user-username", payload.username || "");
+      requestHeaders.set("x-user-verified", String(payload.email_verified || payload.is_verified || false));
+    }
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  // Define auth page routes (publicly accessible only when logged out)
+  const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+
+  // If user is logged in (valid token exists)
+  if (isValid && payload) {
+    // If they try to access login, register, forgot-password, reset-password, or home page, redirect to dashboard
+    if (isAuthRoute || pathname === "/") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  } else {
+    // If user is NOT logged in and tries to access private routes
+    if (!isAuthRoute && pathname !== "/") {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
+  return NextResponse.next();
 }
 
+// Config to specify matching paths
 export const config = {
-  matcher: "/api/:path*",
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - logo/images if any (we exclude files with extensions to allow assets)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\..*$).*)",
+  ],
 };
+export default proxy;
