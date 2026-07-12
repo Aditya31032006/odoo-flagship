@@ -14,7 +14,12 @@ export const allocationQueries = {
   async getActiveAllocationForAsset(assetId: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `SELECT aa.*, u.full_name AS employee_name, d.name AS department_name
+      `SELECT 
+         aa.id, aa.asset_id, aa.employee_id, aa.department_id,
+         aa.allocated_at, aa.expected_return_date, aa.actual_returned_at,
+         aa.checkout_condition, aa.allocation_notes AS notes,
+         aa.checkin_condition, aa.status,
+         u.full_name AS employee_name, d.name AS department_name
        FROM asset_allocations aa
        LEFT JOIN users u ON aa.employee_id = u.id
        LEFT JOIN departments d ON aa.department_id = d.id
@@ -39,13 +44,14 @@ export const allocationQueries = {
     allocatedBy: number,
     executor: any = defaultQuery
   ) {
+    const holderType = employeeId ? "EMPLOYEE" : "DEPARTMENT";
     return runQuery(
       executor,
       `INSERT INTO asset_allocations (
-        asset_id, employee_id, department_id, allocated_at, expected_return_date,
-        checkout_condition, notes, allocated_by, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVE') RETURNING id`,
-      [assetId, employeeId, departmentId, allocatedAt, expectedReturnDate, checkoutCondition, notes, allocatedBy]
+        asset_id, holder_type, employee_id, department_id, allocated_at, expected_return_date,
+        checkout_condition, allocation_notes, allocated_by, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE') RETURNING id`,
+      [assetId, holderType, employeeId, departmentId, allocatedAt, expectedReturnDate, checkoutCondition, notes, allocatedBy]
     );
   },
 
@@ -108,7 +114,12 @@ export const allocationQueries = {
   async getAssetAllocationHistory(assetId: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `SELECT aa.*, u.full_name AS employee_name, d.name AS department_name
+      `SELECT 
+         aa.id, aa.asset_id, aa.employee_id, aa.department_id,
+         aa.allocated_at, aa.expected_return_date, aa.actual_returned_at,
+         aa.checkout_condition, aa.allocation_notes AS notes,
+         aa.checkin_condition, aa.status,
+         u.full_name AS employee_name, d.name AS department_name
        FROM asset_allocations aa
        LEFT JOIN users u ON aa.employee_id = u.id
        LEFT JOIN departments d ON aa.department_id = d.id

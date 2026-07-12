@@ -159,7 +159,7 @@ export default function Assets() {
                 setShowScannerModal(false);
               });
           },
-          () => {}
+          () => { }
         );
         scannerRunningRef.current = true;
       }, 300);
@@ -455,15 +455,15 @@ export default function Assets() {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input 
-              type="text" 
-              placeholder="Search by tag, serial, or QR code.." 
+            <input
+              type="text"
+              placeholder="Search by tag, serial, or QR code.."
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{ flexGrow: 1 }}
             />
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setShowScannerModal(true)}
               style={{ background: "transparent", border: "none", color: "#48e5a0", cursor: "pointer", display: "flex", alignItems: "center", padding: "4px", marginLeft: "8px" }}
               title="Scan QR Code via Camera"
@@ -487,7 +487,7 @@ export default function Assets() {
 
         {/* Directory Content */}
         <div className="assets-content">
-          
+
           {/* Controls: Filters + Add Button */}
           <section className="assets-controls">
             <div className="search-row">
@@ -500,7 +500,7 @@ export default function Assets() {
             </div>
             <div className="filters-row">
               {/* Category Filter */}
-              <select 
+              <select
                 className="filter-select"
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(e.target.value)}
@@ -512,7 +512,7 @@ export default function Assets() {
               </select>
 
               {/* Status Filter */}
-              <select 
+              <select
                 className="filter-select"
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
@@ -528,7 +528,7 @@ export default function Assets() {
               </select>
 
               {/* Department Filter */}
-              <select 
+              <select
                 className="filter-select"
                 value={departmentFilter}
                 onChange={e => setDepartmentFilter(e.target.value)}
@@ -540,7 +540,7 @@ export default function Assets() {
               </select>
 
               {(categoryFilter || statusFilter || departmentFilter) && (
-                <button 
+                <button
                   className="clear-filters-btn"
                   onClick={() => {
                     setCategoryFilter("");
@@ -610,24 +610,24 @@ export default function Assets() {
             </header>
             <form onSubmit={saveAsset}>
               <div className="modal-body">
-                
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Asset Name</label>
-                    <input 
+                    <input
                       type="text" required
                       style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.name} 
-                      onChange={e => setRegForm({...regForm, name: e.target.value})} 
+                      value={regForm.name}
+                      onChange={e => setRegForm({ ...regForm, name: e.target.value })}
                     />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Asset Category</label>
-                    <select 
+                    <select
                       className="cell-select" required style={{ padding: "10px" }}
                       value={regForm.category_id}
                       onChange={e => {
-                        setRegForm({...regForm, category_id: e.target.value});
+                        setRegForm({ ...regForm, category_id: e.target.value });
                         setRegCustomFields({}); // reset
                       }}
                     >
@@ -642,10 +642,10 @@ export default function Assets() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Condition</label>
-                    <select 
+                    <select
                       className="cell-select" style={{ padding: "10px" }}
                       value={regForm.current_condition}
-                      onChange={e => setRegForm({...regForm, current_condition: e.target.value})}
+                      onChange={e => setRegForm({ ...regForm, current_condition: e.target.value })}
                     >
                       <option value="NEW">New</option>
                       <option value="EXCELLENT">Excellent</option>
@@ -657,11 +657,11 @@ export default function Assets() {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Acquisition Cost ($)</label>
-                    <input 
+                    <input
                       type="number" step="0.01" required
                       style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.acquisition_cost} 
-                      onChange={e => setRegForm({...regForm, acquisition_cost: e.target.value})} 
+                      value={regForm.acquisition_cost}
+                      onChange={e => setRegForm({ ...regForm, acquisition_cost: e.target.value })}
                     />
                   </div>
                 </div>
@@ -669,19 +669,19 @@ export default function Assets() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Acquisition Date</label>
-                    <input 
+                    <input
                       type="date" required
                       style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.acquisition_date} 
-                      onChange={e => setRegForm({...regForm, acquisition_date: e.target.value})} 
+                      value={regForm.acquisition_date}
+                      onChange={e => setRegForm({ ...regForm, acquisition_date: e.target.value })}
                     />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Current Location</label>
-                    <select 
+                    <select
                       className="cell-select" style={{ padding: "10px" }}
                       value={regForm.location_id}
-                      onChange={e => setRegForm({...regForm, location_id: e.target.value})}
+                      onChange={e => setRegForm({ ...regForm, location_id: e.target.value })}
                     >
                       <option value="">-- Choose Location --</option>
                       {locations.map(l => (
@@ -692,10 +692,10 @@ export default function Assets() {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px" }}>
-                  <input 
+                  <input
                     type="checkbox" id="shared-book"
                     checked={regForm.is_shared_bookable}
-                    onChange={e => setRegForm({...regForm, is_shared_bookable: e.target.checked})}
+                    onChange={e => setRegForm({ ...regForm, is_shared_bookable: e.target.checked })}
                   />
                   <label htmlFor="shared-book" style={{ fontSize: "0.85rem", color: "#ffffff", cursor: "pointer" }}>Mark Shared / Bookable Resource</label>
                 </div>
@@ -709,21 +709,21 @@ export default function Assets() {
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }} key={field.id}>
                           <label style={{ fontSize: "0.8rem", color: "#94a3b8" }}>{field.name} {field.is_required && "*"}</label>
                           {field.field_type === "DATE" ? (
-                            <input 
+                            <input
                               type="date" required={field.is_required}
                               style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "8px", outline: "none", fontSize: "0.85rem" }}
                               value={regCustomFields[field.id] || ""}
                               onChange={e => handleCustomFieldChange(field.id, e.target.value)}
                             />
                           ) : field.field_type === "NUMBER" ? (
-                            <input 
+                            <input
                               type="number" required={field.is_required}
                               style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "8px", outline: "none", fontSize: "0.85rem" }}
                               value={regCustomFields[field.id] || ""}
                               onChange={e => handleCustomFieldChange(field.id, e.target.value)}
                             />
                           ) : (
-                            <input 
+                            <input
                               type="text" required={field.is_required}
                               style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "8px", outline: "none", fontSize: "0.85rem" }}
                               value={regCustomFields[field.id] || ""}
@@ -815,6 +815,26 @@ export default function Assets() {
                           <label>Current Location</label>
                           <span>{assetDetails.details.location_name || "Warehouse"}</span>
                         </div>
+                        {/* Show active allocation holder */}
+                        {(() => {
+                          const active: any = (assetDetails.allocations as any[])?.find((a: any) => a.status === "ACTIVE" || a.status === "RETURN_REQUESTED" || a.status === "TRANSFER_REQUESTED");
+                          if (!active) return null;
+                          const holder = active.employee_name || active.department_name;
+                          return (
+                            <div className="detail-item" style={{ gridColumn: "1 / -1" }}>
+                              <label>🔗 Allocated To</label>
+                              <span style={{ color: "#48e5a0", fontWeight: 600 }}>
+                                {holder}
+                                {active.allocated_at && (
+                                  <span style={{ color: "#64748b", fontWeight: 400, marginLeft: 8 }}>
+                                    since {formatDate(active.allocated_at)}
+                                    {active.expected_return_date ? ` · return by ${formatDate(active.expected_return_date)}` : ""}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Dynamic Fields values */}
@@ -852,9 +872,9 @@ export default function Assets() {
                       {/* QR Lookup Section */}
                       <div className="qr-code-section" style={{ display: "flex", gap: "16px", alignItems: "center", borderTop: "1px solid #162238", paddingTop: "16px", marginTop: "10px" }}>
                         <div className="qr-code-box" style={{ background: "#ffffff", padding: "8px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", width: "100px", height: "100px", flexShrink: 0 }}>
-                          <img 
+                          <img
                             id="qr-label-img"
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(assetDetails.details.qr_code_value)}`} 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(assetDetails.details.qr_code_value)}`}
                             alt="QR Code"
                             style={{ width: "84px", height: "84px" }}
                           />
@@ -864,6 +884,7 @@ export default function Assets() {
                           <p style={{ fontFamily: "monospace", color: "#48e5a0", fontSize: "0.8rem", margin: "2px 0 6px 0" }}>{assetDetails.details.qr_code_value}</p>
                           <p style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "10px" }}>Scanning directly routes the lookup process to this asset profile detail modal.</p>
                           <button
+                            className="add-action-btn"
                             onClick={() => {
                               const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(assetDetails.details.qr_code_value)}`;
                               const win = window.open("", "_blank", "width=400,height=520");
@@ -917,12 +938,6 @@ export default function Assets() {
                                 </html>
                               `);
                               win.document.close();
-                            }}
-                            style={{ 
-                              background: "linear-gradient(135deg, #1de9b6, #00b0ff)", 
-                              border: "none", color: "#000", fontWeight: "600",
-                              padding: "7px 16px", borderRadius: "6px", cursor: "pointer",
-                              fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "6px"
                             }}
                           >
                             🖨️ Print QR Label
@@ -1037,8 +1052,8 @@ export default function Assets() {
           <div className="modal-card" style={{ maxWidth: "450px" }}>
             <div className="modal-header">
               <h3>Scan Asset QR Code</h3>
-              <button 
-                className="close-btn" 
+              <button
+                className="close-btn"
                 onClick={() => {
                   setShowScannerModal(false);
                 }}
@@ -1047,13 +1062,13 @@ export default function Assets() {
               </button>
             </div>
             <div className="modal-body" style={{ padding: "20px" }}>
-              <div 
-                id="qr-reader" 
-                style={{ 
-                  width: "100%", 
-                  borderRadius: "8px", 
-                  overflow: "hidden", 
-                  background: "#090f1d", 
+              <div
+                id="qr-reader"
+                style={{
+                  width: "100%",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  background: "#090f1d",
                   border: "1.5px solid #162238",
                   minHeight: "250px"
                 }}

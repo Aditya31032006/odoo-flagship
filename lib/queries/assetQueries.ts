@@ -218,7 +218,13 @@ export const assetQueries = {
   async getAssetAllocationHistory(assetId: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `SELECT aa.*, aa.actual_returned_at AS returned_at, u.full_name as employee_name, d.name as department_name
+      `SELECT 
+         aa.id, aa.asset_id, aa.employee_id, aa.department_id,
+         aa.allocated_at, aa.expected_return_date,
+         aa.actual_returned_at AS returned_at,
+         aa.checkout_condition, aa.allocation_notes AS notes,
+         aa.status,
+         u.full_name AS employee_name, d.name AS department_name
        FROM asset_allocations aa
        LEFT JOIN users u ON aa.employee_id = u.id
        LEFT JOIN departments d ON aa.department_id = d.id
