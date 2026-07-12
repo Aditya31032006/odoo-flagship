@@ -1,11 +1,277 @@
-*{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-html , body {
-    height : 100%;
-    width : 100%;
-    overflow: hidden;
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: #070d19;
+  color: #94a3b8;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ────────────────────────────────────────────────────────
+   GLOBAL CUSTOM SCROLLBARS
+   ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070d19;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #162238;
+  border-radius: 4px;
+  border: 1px solid #070d19;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #48e5a0;
+  box-shadow: 0 0 10px rgba(72, 229, 160, 0.4);
+}
+
+/* Firefox scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #162238 #070d19;
+}
+
+/* ────────────────────────────────────────────────────────
+   GLOBAL INPUTS & SELECTS
+   ──────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="date"],
+input[type="datetime-local"],
+textarea,
+select,
+.cell-select,
+.filter-select {
+  background-color: #090f1d !important;
+  border: 1.5px solid #162238 !important;
+  border-radius: 6px !important;
+  color: #ffffff !important;
+  padding: 10px 14px !important;
+  outline: none !important;
+  font-size: 0.85rem !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+textarea:focus,
+select:focus,
+.cell-select:focus,
+.filter-select:focus {
+  border-color: #48e5a0 !important;
+  box-shadow: 0 0 10px rgba(72, 229, 160, 0.2) !important;
+}
+
+/* Premium custom dropdown arrow for select elements */
+select {
+  appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2348e5a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 14px !important;
+  padding-right: 36px !important;
+}
+
+select option {
+  background-color: #090f1d !important;
+  color: #ffffff !important;
+  padding: 10px 14px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* Placeholder style */
+::placeholder {
+  color: #64748b !important;
+  opacity: 0.85 !important;
+}
+
+/* Form Group Spacing & Layout */
+.form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-bottom: 20px !important;
+}
+
+.form-group label {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 4px !important;
+}
+
+/* ────────────────────────────────────────────────────────
+   GLOBAL BUTTONS (Styled like "Add Department" button)
+   ──────────────────────────────────────────────────────── */
+button,
+.btn,
+.add-action-btn,
+input[type="submit"],
+input[type="button"] {
+  background-color: rgba(72, 229, 160, 0.08) !important;
+  border: 1.5px solid #48e5a0 !important;
+  color: #48e5a0 !important;
+  border-radius: 6px !important;
+  padding: 10px 18px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+button:hover,
+.btn:hover,
+.add-action-btn:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover {
+  background-color: #48e5a0 !important;
+  color: #070d19 !important;
+  box-shadow: 0 0 15px rgba(72, 229, 160, 0.3) !important;
+}
+
+button:disabled,
+.btn:disabled,
+input[type="submit"]:disabled,
+input[type="button"]:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  background-color: rgba(72, 229, 160, 0.02) !important;
+  border-color: #162238 !important;
+  color: #64748b !important;
+}
+
+/* ────────────────────────────────────────────────────────
+   BUTTON VARIATIONS (EXCEPTIONS & OVERRIDES)
+   ──────────────────────────────────────────────────────── */
+
+/* Tab Buttons */
+button.tab-btn,
+.tab-btn {
+  background-color: transparent !important;
+  border: 1px solid #162238 !important;
+  color: #94a3b8 !important;
+  border-radius: 20px !important;
+  padding: 10px 20px !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+}
+
+button.tab-btn:hover,
+.tab-btn:hover {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+button.tab-btn.active,
+.tab-btn.active {
+  background-color: rgba(72, 229, 160, 0.08) !important;
+  border-color: #48e5a0 !important;
+  color: #48e5a0 !important;
+  box-shadow: 0 0 10px rgba(72, 229, 160, 0.1) !important;
+}
+
+/* Logout Button */
+button.logout-btn,
+.logout-btn {
+  background-color: transparent !important;
+  border: 1.5px solid #ef4444 !important;
+  color: #ef4444 !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+button.logout-btn:hover,
+.logout-btn:hover {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Cancel / Secondary buttons */
+button.cancel-btn,
+button.secondary-btn,
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border: 1.5px solid #162238 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+button.cancel-btn:hover,
+button.secondary-btn:hover,
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Danger / Delete buttons */
+button.danger-btn,
+button.delete-btn,
+.btn-danger {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  border: 1.5px solid #ef4444 !important;
+  color: #ef4444 !important;
+}
+
+button.danger-btn:hover,
+button.delete-btn:hover,
+.btn-danger:hover {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Close buttons (e.g. modal X) */
+button.close-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  padding: 0 !important;
+  font-size: 1.5rem !important;
+  font-weight: normal !important;
+  box-shadow: none !important;
+}
+
+button.close-btn:hover {
+  background: transparent !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar links */
+.menu-item {
+  box-shadow: none !important;
 }

@@ -155,7 +155,13 @@ $font-sans:      'Inter', sans-serif;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
+
+  > *:not(.dashboard-header) {
+    flex-grow: 1;
+    overflow-y: auto;
+    height: calc(100vh - 70px);
+  }
 }
 
 // ── Top Header ──

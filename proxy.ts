@@ -23,7 +23,7 @@ function decodeJwtPayload(token: string): any {
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const payloadStr = atob(base64);
     return JSON.parse(payloadStr);
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -60,7 +60,7 @@ async function verifyJwt(token: string, secret: string): Promise<boolean> {
       }
     }
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
