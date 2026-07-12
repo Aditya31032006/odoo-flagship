@@ -28,17 +28,22 @@ export const orgSetupService = {
     // Perform database writes to update assignment
     await defaultQuery("BEGIN");
     try {
+      // 0. Fetch previous role
+      const userRes = await defaultQuery("SELECT role FROM users WHERE id = $1", [userId]);
+      const previousRole = userRes.rows.length > 0 ? userRes.rows[0].role : "EMPLOYEE";
+
       // 1. Deactivate current active head for this department
       await orgSetupQueries.deassignActiveDeptHeads(departmentId);
 
       // 2. Insert new assignment
       await orgSetupQueries.assignDeptHead(departmentId, userId, assignedBy);
 
-      // 3. Promote user to DEPARTMENT_HEAD role
-      await orgSetupQueries.updateEmployeeRole(userId, "DEPARTMENT_HEAD");
-
-      // 4. Log role assignment history
-      await orgSetupQueries.logRoleHistory(userId, "DEPARTMENT_HEAD", assignedBy);
+      // 3. Promote user to DEPARTMENT_HEAD role (if not already)
+      if (previousRole !== "DEPARTMENT_HEAD") {
+        await orgSetupQueries.updateEmployeeRole(userId, "DEPARTMENT_HEAD");
+        // 4. Log role assignment history
+        await orgSetupQueries.logRoleHistory(userId, previousRole, "DEPARTMENT_HEAD", assignedBy);
+      }
 
       await defaultQuery("COMMIT");
       return { success: true };
@@ -66,14 +71,14 @@ export const orgSetupService = {
     return list;
   },
 
-  async createCategory(name: string, code: string, description: string, status: string, customFields: any[]) {
+  async createCategory(name: string, code: string, description: string, status: string, customFields: any[], createdBy: number) {
     if (!name || !code) {
       throw new Error("Category Name and Code are required.");
     }
 
     await defaultQuery("BEGIN");
     try {
-      const res = await orgSetupQueries.createCategory(name, code, description, status);
+      const res = await orgSetupQueries.createCategory(name, code, description, status, createdBy);
       const categoryId = res.rows[0].id;
 
       if (customFields && customFields.length > 0) {
@@ -136,8 +141,17 @@ export const orgSetupService = {
   async updateEmployeeRole(userId: number, role: string, assignedBy: number) {
     await defaultQuery("BEGIN");
     try {
+      // 0. Fetch previous role
+      const userRes = await defaultQuery("SELECT role FROM users WHERE id = $1", [userId]);
+      const previousRole = userRes.rows.length > 0 ? userRes.rows[0].role : "EMPLOYEE";
+
+      if (previousRole === role) {
+        await defaultQuery("COMMIT");
+        return { success: true };
+      }
+
       await orgSetupQueries.updateEmployeeRole(userId, role);
-      await orgSetupQueries.logRoleHistory(userId, role, assignedBy);
+      await orgSetupQueries.logRoleHistory(userId, previousRole, role, assignedBy);
       await defaultQuery("COMMIT");
       return { success: true };
     } catch (err) {

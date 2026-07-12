@@ -76,12 +76,12 @@ export const orgSetupQueries = {
     );
   },
 
-  async createCategory(name: string, code: string, description: string, status: string, executor: any = defaultQuery) {
+  async createCategory(name: string, code: string, description: string, status: string, createdBy: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `INSERT INTO asset_categories (name, code, description, status)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
-      [name, code, description, status]
+      `INSERT INTO asset_categories (name, code, description, status, created_by)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [name, code, description, status, createdBy]
     );
   },
 
@@ -98,7 +98,10 @@ export const orgSetupQueries = {
   async getCategoryCustomFields(categoryId: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `SELECT * FROM category_custom_fields WHERE category_id = $1 ORDER BY id ASC`,
+      `SELECT id, category_id, field_name AS name, field_key, data_type AS field_type, is_required 
+       FROM category_custom_fields 
+       WHERE category_id = $1 
+       ORDER BY id ASC`,
       [categoryId]
     );
   },
@@ -112,11 +115,19 @@ export const orgSetupQueries = {
   },
 
   async insertCategoryCustomField(categoryId: number, name: string, fieldType: string, isRequired: boolean, executor: any = defaultQuery) {
+    // Generate valid lowercase alphanumeric/underscore field key
+    let fieldKey = name.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+    if (!fieldKey) fieldKey = 'custom_field_' + Math.floor(Math.random() * 100000);
+    
+    // Ensure fieldType matches database enum values (TEXT, NUMBER, BOOLEAN, DATE, DATETIME, SELECT, MULTI_SELECT)
+    const validTypes = ['TEXT', 'NUMBER', 'BOOLEAN', 'DATE', 'DATETIME', 'SELECT', 'MULTI_SELECT'];
+    const dbType = validTypes.includes(fieldType.toUpperCase()) ? fieldType.toUpperCase() : 'TEXT';
+
     return runQuery(
       executor,
-      `INSERT INTO category_custom_fields (category_id, name, field_type, is_required)
-       VALUES ($1, $2, $3, $4)`,
-      [categoryId, name, fieldType, isRequired]
+      `INSERT INTO category_custom_fields (category_id, field_name, field_key, data_type, is_required)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [categoryId, name, fieldKey, dbType, isRequired]
     );
   },
 
@@ -155,12 +166,12 @@ export const orgSetupQueries = {
     );
   },
 
-  async logRoleHistory(userId: number, role: string, assignedBy: number, executor: any = defaultQuery) {
+  async logRoleHistory(userId: number, previousRole: string, newRole: string, changedBy: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `INSERT INTO role_assignment_history (user_id, role, assigned_by)
-       VALUES ($1, $2, $3)`,
-      [userId, role, assignedBy]
+      `INSERT INTO role_assignment_history (user_id, previous_role, new_role, changed_by, reason)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [userId, previousRole, newRole, changedBy, 'Role updated via Organization Setup dashboard']
     );
   }
 };

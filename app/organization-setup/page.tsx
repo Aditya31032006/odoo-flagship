@@ -532,7 +532,7 @@ export default function OrganizationSetup() {
                                 onChange={(e) => assignDeptHead(dept.id, e.target.value)}
                               >
                                 <option value="">--- Unassigned ---</option>
-                                {employees.map(emp => (
+                                {employees.filter(emp => emp.role === "DEPARTMENT_HEAD" || emp.id === dept.head_user_id).map(emp => (
                                   <option key={emp.id} value={emp.id}>{emp.full_name}</option>
                                 ))}
                               </select>

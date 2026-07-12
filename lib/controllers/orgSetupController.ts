@@ -102,13 +102,13 @@ export const orgSetupController = {
 
   async createCategory(req: Request) {
     try {
-      const { verified } = await verifyAdminUser(req);
+      const { id: adminId, verified } = await verifyAdminUser(req);
       if (!verified) {
         return NextResponse.json({ message: "Access Denied: Admin role required." }, { status: 403 });
       }
 
       const { name, code, description, status, customFields } = await req.json();
-      const category = await orgSetupService.createCategory(name, code, description, status || "ACTIVE", customFields || []);
+      const category = await orgSetupService.createCategory(name, code, description, status || "ACTIVE", customFields || [], adminId);
       return NextResponse.json(category, { status: 201 });
     } catch (error: any) {
       console.error("createCategory Controller Error:", error);
