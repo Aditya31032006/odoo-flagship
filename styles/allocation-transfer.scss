@@ -1,0 +1,175 @@
+// ── Allocation & Transfer Stylesheet ─────────────────────
+// Deep dark layout styling for checking out assets or submitting transfer requests
+
+$bg-page:        #070d19;
+$bg-card:        #0b1222;
+$border-color:   #162238;
+$accent-green:   #48e5a0;
+$text-title:     #ffffff;
+$text-body:      #94a3b8;
+$text-muted:     #64748b;
+$font-sans:      'Inter', sans-serif;
+
+.allocation-content {
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.allocation-card {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 650px;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+  .card-header {
+    margin-bottom: 24px;
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: $text-title;
+    }
+
+    p {
+      font-size: 0.85rem;
+      color: $text-muted;
+      margin-top: 4px;
+    }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+
+    label {
+      font-size: 0.8rem;
+      color: $text-muted;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+
+    .select-input, .text-input, .textarea-input {
+      background-color: #090f1d;
+      border: 1px solid $border-color;
+      color: $text-title;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: $accent-green;
+      }
+    }
+
+    .textarea-input {
+      resize: none;
+      height: 100px;
+    }
+  }
+}
+
+// ── Warning Block Alert ──
+.allocation-warning-block {
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #fca5a5;
+  font-size: 0.85rem;
+  font-weight: 500;
+  animation: warningFadeIn 0.3s ease;
+
+  .warning-title {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+}
+
+// ── Horizontal Grid Forms ──
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 500px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Bottom History Timeline ──
+.allocation-history-timeline {
+  border-top: 1px solid $border-color;
+  margin-top: 24px;
+  padding-top: 24px;
+
+  h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .history-item {
+      font-size: 0.85rem;
+      color: $text-body;
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+
+      .bullet {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: $accent-green;
+        flex-shrink: 0;
+        box-shadow: 0 0 6px $accent-green;
+      }
+
+      .text {
+        span {
+          color: $text-muted;
+        }
+      }
+    }
+
+    .empty-history {
+      font-size: 0.85rem;
+      color: $text-muted;
+      font-style: italic;
+    }
+  }
+}
+
+@keyframes warningFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
