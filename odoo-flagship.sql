@@ -762,14 +762,9 @@ CREATE TABLE assets (
     category_id BIGINT NOT NULL,
 
     serial_number VARCHAR(150),
-    manufacturer VARCHAR(150),
-    model_number VARCHAR(150),
 
     acquisition_date DATE,
     acquisition_cost NUMERIC(15, 2),
-
-    warranty_start_date DATE,
-    warranty_end_date DATE,
 
     expected_retirement_date DATE,
     retired_at TIMESTAMPTZ,
@@ -807,12 +802,12 @@ CREATE TABLE assets (
     CONSTRAINT assets_department_fk
         FOREIGN KEY (department_id)
         REFERENCES departments(id)
-        ON DELETE CASCADE,
+        ON DELETE SET NULL,
 
     CONSTRAINT assets_location_fk
         FOREIGN KEY (location_id)
         REFERENCES locations(id)
-        ON DELETE CASCADE,
+        ON DELETE SET NULL,
 
     CONSTRAINT assets_created_by_fk
         FOREIGN KEY (created_by)
@@ -831,13 +826,6 @@ CREATE TABLE assets (
         CHECK (
             acquisition_cost IS NULL
             OR acquisition_cost >= 0
-        ),
-
-    CONSTRAINT asset_warranty_dates_check
-        CHECK (
-            warranty_end_date IS NULL
-            OR warranty_start_date IS NULL
-            OR warranty_end_date >= warranty_start_date
         ),
 
     CONSTRAINT asset_retirement_date_check
@@ -899,9 +887,7 @@ CREATE INDEX assets_name_search_idx
             COALESCE(name, '') || ' ' ||
             COALESCE(description, '') || ' ' ||
             COALESCE(asset_tag, '') || ' ' ||
-            COALESCE(serial_number, '') || ' ' ||
-            COALESCE(manufacturer, '') || ' ' ||
-            COALESCE(model_number, '')
+            COALESCE(serial_number, '')
         )
     );
 

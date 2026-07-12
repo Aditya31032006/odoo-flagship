@@ -36,13 +36,8 @@ export const assetService = {
       name: string;
       description?: string;
       category_id: string;
-      serial_number: string;
-      manufacturer: string;
-      model_number: string;
       acquisition_date: string;
       acquisition_cost: string;
-      warranty_start_date?: string;
-      warranty_end_date?: string;
       expected_retirement_date?: string;
       current_condition: string;
       department_id?: string;
@@ -73,18 +68,23 @@ export const assetService = {
       const locId = data.location_id ? parseInt(data.location_id, 10) : null;
       const isShared = data.is_shared_bookable || false;
 
+      // Fetch category code
+      const catRes = await defaultQuery("SELECT code FROM asset_categories WHERE id = $1", [catId]);
+      const catCode = catRes.rows[0]?.code || "AST";
+
+      // Fetch count of assets in this category
+      const countRes = await defaultQuery("SELECT COUNT(*) AS total FROM assets WHERE category_id = $1", [catId]);
+      const nextNum = parseInt(countRes.rows[0].total, 10) + 1;
+      const serialNumber = `${catCode.toUpperCase()}-${String(nextNum).padStart(3, "0")}`;
+
       const assetRes = await assetQueries.createAsset(
         assetTag,
         data.name,
         data.description || "",
         catId,
-        data.serial_number,
-        data.manufacturer,
-        data.model_number,
+        serialNumber,
         data.acquisition_date || null,
         cost,
-        data.warranty_start_date || null,
-        data.warranty_end_date || null,
         data.expected_retirement_date || null,
         "AVAILABLE", // Default starting status
         data.current_condition || "NEW",

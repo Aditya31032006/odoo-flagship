@@ -42,7 +42,6 @@ export const assetQueries = {
         OR a.asset_tag ILIKE $${params.length} 
         OR a.serial_number ILIKE $${params.length} 
         OR a.qr_code_value ILIKE $${params.length} 
-        OR a.manufacturer ILIKE $${params.length}
       )`;
     }
 
@@ -82,12 +81,8 @@ export const assetQueries = {
     description: string,
     categoryId: number,
     serialNumber: string,
-    manufacturer: string,
-    modelNumber: string,
     acquisitionDate: string | null,
     acquisitionCost: number,
-    warrantyStartDate: string | null,
-    warrantyEndDate: string | null,
     expectedRetirementDate: string | null,
     currentStatus: string,
     currentCondition: string,
@@ -102,18 +97,18 @@ export const assetQueries = {
     return runQuery(
       executor,
       `INSERT INTO assets (
-        asset_tag, name, description, category_id, serial_number, manufacturer, model_number,
-        acquisition_date, acquisition_cost, warranty_start_date, warranty_end_date, 
-        expected_retirement_date, current_status, current_condition, department_id, 
-        location_id, is_shared_bookable, qr_code_value, barcode_value, created_by
+        asset_tag, name, description, category_id, serial_number,
+        acquisition_date, acquisition_cost, expected_retirement_date, 
+        current_status, current_condition, department_id, location_id, 
+        is_shared_bookable, qr_code_value, barcode_value, created_by
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
       ) RETURNING id`,
       [
-        assetTag, name, description, categoryId, serialNumber, manufacturer, modelNumber,
-        acquisitionDate, acquisitionCost, warrantyStartDate, warrantyEndDate,
-        expectedRetirementDate, currentStatus, currentCondition, departmentId,
-        locationId, isSharedBookable, qrCodeValue, barcodeValue, createdBy
+        assetTag, name, description, categoryId, serialNumber,
+        acquisitionDate, acquisitionCost, expectedRetirementDate, 
+        currentStatus, currentCondition, departmentId, locationId, 
+        isSharedBookable, qrCodeValue, barcodeValue, createdBy
       ]
     );
   },

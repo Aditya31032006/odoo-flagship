@@ -44,12 +44,8 @@ interface AssetDetails {
     name: string;
     description: string;
     serial_number: string;
-    manufacturer: string;
-    model_number: string;
     acquisition_date: string;
     acquisition_cost: string;
-    warranty_start_date: string;
-    warranty_end_date: string;
     expected_retirement_date: string;
     current_status: string;
     current_condition: string;
@@ -92,12 +88,8 @@ export default function Assets() {
     description: "",
     category_id: "",
     serial_number: "",
-    manufacturer: "",
-    model_number: "",
     acquisition_date: "",
     acquisition_cost: "",
-    warranty_start_date: "",
-    warranty_end_date: "",
     expected_retirement_date: "",
     current_condition: "NEW",
     department_id: "",
@@ -113,6 +105,76 @@ export default function Assets() {
   const [assetDetails, setAssetDetails] = useState<AssetDetails | null>(null);
   const [detailActiveTab, setDetailActiveTab] = useState<"info" | "allocations" | "maintenance" | "lifecycle">("info");
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // QR Camera Scanner States & Handlers
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [scannerInstance, setScannerInstance] = useState<any>(null);
+
+  const startScanner = async () => {
+    try {
+      setTimeout(async () => {
+        const { Html5Qrcode } = await import("html5-qrcode");
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        setScannerInstance(html5QrCode);
+
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          (decodedText) => {
+            toast.success("QR code scanned successfully!");
+            const parts = decodedText.split("/");
+            const assetTag = parts[parts.length - 1];
+
+            html5QrCode.stop().then(() => {
+              setShowScannerModal(false);
+              fetch(`/api/assets`)
+                .then(res => res.json())
+                .then(data => {
+                  const matchedAsset = data.find((a: any) => a.asset_tag === assetTag);
+                  if (matchedAsset) {
+                    openAssetDetails(matchedAsset.id);
+                  } else {
+                    toast.error(`Asset tag ${assetTag} not found in directory.`);
+                  }
+                });
+            }).catch(err => {
+              console.error("Failed to stop scanner", err);
+              setShowScannerModal(false);
+            });
+          },
+          () => {}
+        );
+      }, 300);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Camera access failed: " + err.message);
+    }
+  };
+
+  const stopScanner = async () => {
+    if (scannerInstance) {
+      try {
+        await scannerInstance.stop();
+      } catch (err) {
+        console.error(err);
+      }
+      setScannerInstance(null);
+    }
+  };
+
+  useEffect(() => {
+    if (showScannerModal) {
+      startScanner();
+    } else {
+      stopScanner();
+    }
+    return () => {
+      stopScanner();
+    };
+  }, [showScannerModal]);
 
   // Decode User JWT
   useEffect(() => {
@@ -204,12 +266,8 @@ export default function Assets() {
       description: "",
       category_id: "",
       serial_number: "",
-      manufacturer: "",
-      model_number: "",
       acquisition_date: "",
       acquisition_cost: "",
-      warranty_start_date: "",
-      warranty_end_date: "",
       expected_retirement_date: "",
       current_condition: "NEW",
       department_id: "",
@@ -390,7 +448,7 @@ export default function Assets() {
       <main className="dashboard-main">
         {/* Header */}
         <header className="dashboard-header">
-          <div className="header-search">
+          <div className="header-search" style={{ display: "flex", alignItems: "center" }}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -399,7 +457,19 @@ export default function Assets() {
               placeholder="Search by tag, serial, or QR code.." 
               value={search}
               onChange={e => setSearch(e.target.value)}
+              style={{ flexGrow: 1 }}
             />
+            <button 
+              type="button" 
+              onClick={() => setShowScannerModal(true)}
+              style={{ background: "transparent", border: "none", color: "#48e5a0", cursor: "pointer", display: "flex", alignItems: "center", padding: "4px", marginLeft: "8px" }}
+              title="Scan QR Code via Camera"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ width: "20px", height: "20px" }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
           </div>
 
           <div className="header-actions">
@@ -568,34 +638,19 @@ export default function Assets() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Serial Number</label>
-                    <input 
-                      type="text" required
-                      style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.serial_number} 
-                      onChange={e => setRegForm({...regForm, serial_number: e.target.value})} 
-                    />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Manufacturer</label>
-                    <input 
-                      type="text" required
-                      style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.manufacturer} 
-                      onChange={e => setRegForm({...regForm, manufacturer: e.target.value})} 
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Model Number</label>
-                    <input 
-                      type="text" required
-                      style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.model_number} 
-                      onChange={e => setRegForm({...regForm, model_number: e.target.value})} 
-                    />
+                    <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Condition</label>
+                    <select 
+                      className="cell-select" style={{ padding: "10px" }}
+                      value={regForm.current_condition}
+                      onChange={e => setRegForm({...regForm, current_condition: e.target.value})}
+                    >
+                      <option value="NEW">New</option>
+                      <option value="EXCELLENT">Excellent</option>
+                      <option value="GOOD">Good</option>
+                      <option value="FAIR">Fair</option>
+                      <option value="DAMAGED">Damaged</option>
+                      <option value="UNUSABLE">Unusable</option>
+                    </select>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Acquisition Cost ($)</label>
@@ -633,49 +688,13 @@ export default function Assets() {
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Warranty Start Date</label>
-                    <input 
-                      type="date"
-                      style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.warranty_start_date} 
-                      onChange={e => setRegForm({...regForm, warranty_start_date: e.target.value})} 
-                    />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Warranty End Date</label>
-                    <input 
-                      type="date"
-                      style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
-                      value={regForm.warranty_end_date} 
-                      onChange={e => setRegForm({...regForm, warranty_end_date: e.target.value})} 
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Department Owner</label>
-                    <select 
-                      className="cell-select" style={{ padding: "10px" }}
-                      value={regForm.department_id}
-                      onChange={e => setRegForm({...regForm, department_id: e.target.value})}
-                    >
-                      <option value="">-- Choose Department --</option>
-                      {departments.map(d => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", height: "100%", paddingTop: "20px" }}>
-                    <input 
-                      type="checkbox" id="shared-book"
-                      checked={regForm.is_shared_bookable}
-                      onChange={e => setRegForm({...regForm, is_shared_bookable: e.target.checked})}
-                    />
-                    <label htmlFor="shared-book" style={{ fontSize: "0.85rem", color: "#ffffff", cursor: "pointer" }}>Mark Shared / Bookable Resource</label>
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px" }}>
+                  <input 
+                    type="checkbox" id="shared-book"
+                    checked={regForm.is_shared_bookable}
+                    onChange={e => setRegForm({...regForm, is_shared_bookable: e.target.checked})}
+                  />
+                  <label htmlFor="shared-book" style={{ fontSize: "0.85rem", color: "#ffffff", cursor: "pointer" }}>Mark Shared / Bookable Resource</label>
                 </div>
 
                 {/* Category dynamic custom fields */}
@@ -770,11 +789,7 @@ export default function Assets() {
                     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                       <div className="detail-grid">
                         <div className="detail-item">
-                          <label>Manufacturer & Model</label>
-                          <span>{assetDetails.details.manufacturer} — {assetDetails.details.model_number}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Serial Number</label>
+                          <label>Custom Asset ID</label>
                           <span>{assetDetails.details.serial_number}</span>
                         </div>
                         <div className="detail-item">
@@ -788,10 +803,6 @@ export default function Assets() {
                         <div className="detail-item">
                           <label>Cost & Acquisition Date</label>
                           <span>${assetDetails.details.acquisition_cost} on {formatDate(assetDetails.details.acquisition_date)}</span>
-                        </div>
-                        <div className="detail-item">
-                          <label>Warranty Range</label>
-                          <span>{formatDate(assetDetails.details.warranty_start_date)} - {formatDate(assetDetails.details.warranty_end_date)}</span>
                         </div>
                         <div className="detail-item">
                           <label>Assigned Department</label>
@@ -836,12 +847,18 @@ export default function Assets() {
                       </div>
 
                       {/* QR Lookup Section */}
-                      <div className="qr-code-section">
-                        <div className="qr-code-box">QR Code Lookup</div>
+                      <div className="qr-code-section" style={{ display: "flex", gap: "16px", alignItems: "center", borderTop: "1px solid #162238", paddingTop: "16px", marginTop: "10px" }}>
+                        <div className="qr-code-box" style={{ background: "#ffffff", padding: "8px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", width: "100px", height: "100px" }}>
+                          <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(assetDetails.details.qr_code_value)}`} 
+                            alt="QR Code"
+                            style={{ width: "84px", height: "84px" }}
+                          />
+                        </div>
                         <div className="qr-info">
-                          <h4>QR Scan Value</h4>
-                          <p style={{ fontFamily: "monospace", color: "#48e5a0" }}>{assetDetails.details.qr_code_value}</p>
-                          <p>Scanning directly routes the lookup process to this asset profile detail modal.</p>
+                          <h4 style={{ fontSize: "0.85rem", color: "#ffffff", fontWeight: "600" }}>QR Scan Value</h4>
+                          <p style={{ fontFamily: "monospace", color: "#48e5a0", fontSize: "0.8rem", margin: "2px 0 6px 0" }}>{assetDetails.details.qr_code_value}</p>
+                          <p style={{ fontSize: "0.75rem", color: "#64748b" }}>Scanning directly routes the lookup process to this asset profile detail modal.</p>
                         </div>
                       </div>
                     </div>
@@ -943,6 +960,40 @@ export default function Assets() {
             <footer className="modal-footer">
               <button className="cancel-btn" onClick={() => setShowDetailModal(false)}>Close Detail View</button>
             </footer>
+          </div>
+        </div>
+      )}
+      {/* ── QR CAMERA SCANNER MODAL ── */}
+      {showScannerModal && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: "450px" }}>
+            <div className="modal-header">
+              <h3>Scan Asset QR Code</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => {
+                  setShowScannerModal(false);
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: "20px" }}>
+              <div 
+                id="qr-reader" 
+                style={{ 
+                  width: "100%", 
+                  borderRadius: "8px", 
+                  overflow: "hidden", 
+                  background: "#090f1d", 
+                  border: "1.5px solid #162238",
+                  minHeight: "250px"
+                }}
+              ></div>
+              <p style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "12px", textAlign: "center" }}>
+                Point your camera at the asset's QR code label to automatically view details.
+              </p>
+            </div>
           </div>
         </div>
       )}
