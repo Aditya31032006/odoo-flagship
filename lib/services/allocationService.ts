@@ -133,7 +133,7 @@ export const allocationService = {
       // 3. Add activity log
       await defaultQuery(
         `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
-         VALUES ($1, 'TRANSFER_REQUEST', 'ASSET', $2, $3)`,
+         VALUES ($1, 'TRANSFER', 'ASSET', $2, $3)`,
         [requestedByUserId, assetIdNum, `Asset transfer request created`]
       );
 

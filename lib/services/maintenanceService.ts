@@ -47,7 +47,7 @@ export const maintenanceService = {
       // 3. Create activity log
       await defaultQuery(
         `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
-         VALUES ($1, 'MAINTENANCE_REQUEST', 'ASSET', $2, $3)`,
+         VALUES ($1, 'CREATE', 'ASSET', $2, $3)`,
         [raisedByUserId, assetIdNum, `Maintenance request ${requestNumber} raised: ${data.issueTitle}`]
       );
 
@@ -94,7 +94,7 @@ export const maintenanceService = {
       // Create activity log
       await defaultQuery(
         `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
-         VALUES ($1, 'MAINTENANCE_APPROVE', 'ASSET', $2, $3)`,
+         VALUES ($1, 'APPROVE', 'ASSET', $2, $3)`,
         [approvedByUserId, req.asset_id, `Maintenance request approved`]
       );
 
@@ -232,7 +232,7 @@ export const maintenanceService = {
       // Create activity log
       await defaultQuery(
         `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
-         VALUES ($1, 'MAINTENANCE_RESOLVED', 'ASSET', $2, $3)`,
+         VALUES ($1, 'RESOLVE', 'ASSET', $2, $3)`,
         [resolvedByUserId, req.asset_id, `Maintenance request resolved`]
       );
 

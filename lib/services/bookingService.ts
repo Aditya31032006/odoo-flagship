@@ -69,8 +69,8 @@ export const bookingService = {
       }
 
       // 3. Create booking
-      const empId = data.createdForEmployeeId ? parseInt(data.createdForEmployeeId, 10) : null;
-      const deptId = data.createdForDepartmentId ? parseInt(data.createdForDepartmentId, 10) : null;
+      const empId = data.createdForType === "EMPLOYEE" ? bookedByUserId : (data.createdForEmployeeId ? parseInt(data.createdForEmployeeId, 10) : null);
+      const deptId = data.createdForType === "DEPARTMENT" ? (data.createdForDepartmentId ? parseInt(data.createdForDepartmentId, 10) : null) : null;
 
       const createRes = await bookingQueries.createBooking(
         assetIdNum,
@@ -88,7 +88,7 @@ export const bookingService = {
       // 4. Create activity log
       await defaultQuery(
         `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
-         VALUES ($1, 'BOOK', 'ASSET', $2, $3)`,
+         VALUES ($1, 'CREATE', 'ASSET', $2, $3)`,
         [bookedByUserId, assetIdNum, `Resource reserved: ${data.title}`]
       );
 
@@ -123,8 +123,48 @@ export const bookingService = {
 
       await defaultQuery(
         `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
-         VALUES ($1, 'CANCEL_BOOK', 'ASSET', $2, $3)`,
+         VALUES ($1, 'CANCEL', 'ASSET', $2, $3)`,
         [cancelledByUserId, booking.asset_id, `Reservation cancelled: ${reason}`]
+      );
+
+      await defaultQuery("COMMIT");
+      return { success: true };
+    } catch (error) {
+      await defaultQuery("ROLLBACK");
+      throw error;
+    }
+  },
+
+  async rescheduleReservation(bookingId: number, startAt: string, endAt: string, userId: number) {
+    const startStr = new Date(startAt).toISOString();
+    const endStr = new Date(endAt).toISOString();
+
+    if (new Date(startStr) >= new Date(endStr)) {
+      throw new Error("Start time must be before end time.");
+    }
+
+    await defaultQuery("BEGIN");
+    try {
+      const bookingRes = await defaultQuery(
+        "SELECT asset_id, title FROM resource_bookings WHERE id = $1",
+        [bookingId]
+      );
+      if (bookingRes.rows.length === 0) {
+        throw new Error("Booking record not found.");
+      }
+      const booking = bookingRes.rows[0];
+
+      const overlaps = await bookingQueries.checkOverlap(booking.asset_id, startStr, endStr, bookingId);
+      if (overlaps.rows.length > 0) {
+        throw new Error("Reschedule Rejected: This resource is already reserved during this period.");
+      }
+
+      await bookingQueries.updateBookingTimes(bookingId, startStr, endStr);
+
+      await defaultQuery(
+        `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
+         VALUES ($1, 'UPDATE', 'ASSET', $2, $3)`,
+        [userId, booking.asset_id, `Resource booking rescheduled: ${booking.title}`]
       );
 
       await defaultQuery("COMMIT");

@@ -67,17 +67,22 @@ export const bookingController = {
       }
 
       const userId = parseInt(headerUserId, 10);
-      const { bookingId, reason } = await req.json();
+      const { bookingId, reason, startAt, endAt } = await req.json();
 
       if (!bookingId) {
         return NextResponse.json({ message: "Booking ID is required" }, { status: 400 });
       }
 
-      await bookingService.cancelReservation(parseInt(bookingId, 10), userId, reason || "User request");
-      return NextResponse.json({ message: "Booking cancelled successfully" }, { status: 200 });
+      if (startAt && endAt) {
+        await bookingService.rescheduleReservation(parseInt(bookingId, 10), startAt, endAt, userId);
+        return NextResponse.json({ message: "Booking rescheduled successfully" }, { status: 200 });
+      } else {
+        await bookingService.cancelReservation(parseInt(bookingId, 10), userId, reason || "User request");
+        return NextResponse.json({ message: "Booking cancelled successfully" }, { status: 200 });
+      }
     } catch (error: any) {
       console.error("ResourceBooking PUT Controller Error:", error);
-      return NextResponse.json({ message: error.message || "Failed to cancel booking" }, { status: 400 });
+      return NextResponse.json({ message: error.message || "Failed to update booking" }, { status: 400 });
     }
   }
 };

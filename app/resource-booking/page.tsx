@@ -214,17 +214,174 @@ export default function ResourceBooking() {
     }
   };
 
+  // Drag & Resize State
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [activeResizeId, setActiveResizeId] = useState<string | null>(null);
+  const [draggedOffsets, setDraggedOffsets] = useState<Record<string, { top: number; height: number }>>({});
+
   // Helper formatting values
   const getHourText = (dateStr: string) => {
     const d = new Date(dateStr);
     const hour = d.getHours();
+    const mins = d.getMinutes();
     const ampm = hour >= 12 ? "PM" : "AM";
     const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
-    return `${formattedHour} ${ampm}`;
+    const formattedMins = mins === 0 ? "" : `:${String(mins).padStart(2, '0')}`;
+    return `${formattedHour}${formattedMins} ${ampm}`;
   };
 
   const getHourNumber = (dateStr: string) => {
     return new Date(dateStr).getHours();
+  };
+
+  const getFractionalHoursFromNine = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const hour = d.getHours();
+    const mins = d.getMinutes();
+    return (hour + mins / 60) - 9;
+  };
+
+  const getDateFromFractionalHours = (frac: number) => {
+    const d = new Date(selectedDate);
+    const totalMins = Math.round((frac + 9) * 60);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    d.setHours(h, m, 0, 0);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(h)}:${pad(m)}:00`;
+  };
+
+  // Convert fractional hours-from-9 to human readable time label (live preview)
+  const fracToTimeLabel = (frac: number) => {
+    const totalMins = Math.round((frac + 9) * 60);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    const ampm = h >= 12 ? "PM" : "AM";
+    const displayH = h % 12 === 0 ? 12 : h % 12;
+    const displayM = m === 0 ? "" : `:${String(m).padStart(2, '0')}`;
+    return `${displayH}${displayM} ${ampm}`;
+  };
+
+  const handleResizeStart = (e: React.MouseEvent, bookingId: string, startFrac: number, currentHeight: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setActiveResizeId(bookingId);
+
+    const startY = e.clientY;
+    // Mutable local ref — always has the latest snapped height
+    let latestHeight = currentHeight;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const newHeight = Math.max(40, currentHeight + deltaY);
+      latestHeight = Math.round(newHeight / 40) * 40;
+
+      setDraggedOffsets(prev => ({
+        ...prev,
+        [bookingId]: {
+          top: startFrac * 80,
+          height: latestHeight
+        }
+      }));
+    };
+
+    const handleMouseUp = async () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      setActiveResizeId(null);
+
+      // latestHeight is always fresh — no stale closure issue
+      const finalFracEnd = startFrac + (latestHeight / 80);
+      const finalStartDateTime = getDateFromFractionalHours(startFrac);
+      const finalEndDateTime = getDateFromFractionalHours(finalFracEnd);
+
+      try {
+        const res = await fetch("/api/resource-booking", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookingId,
+            startAt: finalStartDateTime,
+            endAt: finalEndDateTime
+          })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || "Failed to reschedule booking");
+        }
+        toast.success("Booking duration updated!");
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+
+      setDraggedOffsets({});
+      fetchBookingsList();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleDragStart = (e: React.MouseEvent, bookingId: string, currentFracStart: number, currentFracEnd: number) => {
+    e.preventDefault();
+    setActiveDragId(bookingId);
+
+    const startY = e.clientY;
+    const duration = currentFracEnd - currentFracStart;
+    const initialTop = currentFracStart * 80;
+    // Mutable local ref — always has the latest snapped top
+    let latestTop = initialTop;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const newTop = Math.max(0, Math.min(320 - (duration * 80), initialTop + deltaY));
+      latestTop = Math.round(newTop / 40) * 40;
+
+      setDraggedOffsets(prev => ({
+        ...prev,
+        [bookingId]: {
+          top: latestTop,
+          height: duration * 80
+        }
+      }));
+    };
+
+    const handleMouseUp = async () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      setActiveDragId(null);
+
+      // latestTop is always fresh — no stale closure issue
+      const finalFracStart = latestTop / 80;
+      const finalFracEnd = finalFracStart + duration;
+      const finalStartDateTime = getDateFromFractionalHours(finalFracStart);
+      const finalEndDateTime = getDateFromFractionalHours(finalFracEnd);
+
+      try {
+        const res = await fetch("/api/resource-booking", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookingId,
+            startAt: finalStartDateTime,
+            endAt: finalEndDateTime
+          })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || "Failed to reschedule booking");
+        }
+        toast.success("Booking rescheduled successfully!");
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+
+      setDraggedOffsets({});
+      fetchBookingsList();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
   };
 
   // Helper: check if a booking overlaps a specific hour slot (e.g. 9:00, 10:00, 11:00, 12:00, 1:00)
@@ -405,47 +562,145 @@ export default function ResourceBooking() {
                   />
                 </div>
               </div>
-
               {selectedAssetId ? (
                 loadingBookings ? (
                   <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>Fetching schedules...</div>
                 ) : (
                   <>
                     {/* Hourly timeline calendar */}
-                    <div className="calendar-timeline">
+                    <div style={{ display: "flex", width: "100%", position: "relative", marginTop: "20px", userSelect: "none" }}>
                       
-                      {/* Hour slots: 9 AM to 1 PM (or 13:00) */}
-                      {[9, 10, 11, 12, 13].map((hour) => {
-                        const labelText = hour === 12 ? "12:00 PM" : hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`;
-                        const slotBookings = getBookingsForHour(hour);
-
-                        return (
-                          <div className="timeline-hour-row" key={hour}>
-                            <div className="hour-label">{labelText}</div>
-                            <div className="hour-slots-container">
-                              {slotBookings.length === 0 ? (
-                                <span style={{ color: "#64748b", fontSize: "0.8rem", fontStyle: "italic" }}>No active bookings</span>
-                              ) : (
-                                slotBookings.map((b) => (
-                                  <div className="booking-block-card" key={b.id}>
-                                    <div className="booking-info">
-                                      <span className="booking-title">{b.title} — {b.purpose}</span>
-                                      <span className="booking-meta">
-                                        Reserved by <strong>{b.booked_by_name}</strong> {b.department_name ? `(${b.department_name})` : ""} from {getHourText(b.start_at)} to {getHourText(b.end_at)}
-                                      </span>
-                                    </div>
-                                    {currentUser && (
-                                      <button className="cancel-booking-btn" onClick={() => handleCancelBooking(b.id)}>
-                                        Cancel Booking
-                                      </button>
-                                    )}
-                                  </div>
-                                ))
-                              )}
+                      {/* Left: Hour Labels */}
+                      <div style={{ width: "80px", display: "flex", flexDirection: "column", position: "relative", height: "360px", color: "#94a3b8", fontSize: "0.85rem" }}>
+                        {[9, 10, 11, 12, 13].map((hour, idx) => {
+                          const labelText = hour === 12 ? "12:00 PM" : hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`;
+                          return (
+                            <div key={hour} style={{ position: "absolute", top: `${idx * 80}px`, left: 0, height: "20px", display: "flex", alignItems: "center" }}>
+                              {labelText}
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
+
+                      {/* Right: Grid & Absolute Booked Cards Container */}
+                      <div style={{ flex: 1, position: "relative", height: "320px", borderLeft: "2px solid #162238" }}>
+                        {/* Grid Horizontal Rows */}
+                        {[0, 1, 2, 3].map((idx) => (
+                          <div key={idx} style={{ position: "absolute", top: `${idx * 80}px`, left: 0, right: 0, height: "80px", borderBottom: "1px solid #162238" }} />
+                        ))}
+
+                        {/* Dragged or Real Bookings */}
+                        {bookings.map((b) => {
+                          const startFrac = getFractionalHoursFromNine(b.start_at);
+                          const endFrac = getFractionalHoursFromNine(b.end_at);
+                          const defaultTop = startFrac * 80;
+                          const defaultHeight = (endFrac - startFrac) * 80;
+
+                          // Check if dragged/resized dynamically
+                          const dragOffset = draggedOffsets[b.id];
+                          const top = dragOffset ? dragOffset.top : defaultTop;
+                          const height = dragOffset ? dragOffset.height : defaultHeight;
+
+                          return (
+                            <div
+                              key={b.id}
+                              style={{
+                                position: "absolute",
+                                top: `${top}px`,
+                                height: `${height}px`,
+                                left: "10px",
+                                right: "10px",
+                                background: "rgba(59, 130, 246, 0.2)",
+                                border: "1px solid #3b82f6",
+                                borderRadius: "6px",
+                                padding: "8px 12px",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "space-between",
+                                color: "#ffffff",
+                                cursor: activeDragId === b.id ? "grabbing" : "grab",
+                                zIndex: activeDragId === b.id || activeResizeId === b.id ? 10 : 2
+                              }}
+                              onMouseDown={(e) => handleDragStart(e, b.id, startFrac, endFrac)}
+                            >
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%" }}>
+                                 <div style={{ display: "flex", flexDirection: "column" }}>
+                                  <span style={{ fontWeight: "600", fontSize: "0.9rem", color: "#3b82f6" }}>
+                                    Booked — {b.title} — {
+                                      dragOffset
+                                        ? fracToTimeLabel(top / 80)
+                                        : getHourText(b.start_at)
+                                    } to {
+                                      dragOffset
+                                        ? fracToTimeLabel((top + height) / 80)
+                                        : getHourText(b.end_at)
+                                    }
+                                  </span>
+                                  <span style={{ fontSize: "0.8rem", color: "#94a3b8", marginTop: "2px" }}>
+                                    Reserved for: {b.booked_by_name} {b.department_name ? `(${b.department_name})` : ""}
+                                  </span>
+                                </div>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancelBooking(b.id);
+                                  }}
+                                  style={{ background: "transparent", border: "none", color: "#ef4444", fontSize: "0.75rem", cursor: "pointer" }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+
+                              {/* Resize Handle strip at bottom */}
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  height: "8px",
+                                  cursor: "ns-resize",
+                                  background: "rgba(255, 255, 255, 0.1)",
+                                  borderBottomLeftRadius: "6px",
+                                  borderBottomRightRadius: "6px"
+                                }}
+                                onMouseDown={(e) => handleResizeStart(e, b.id, startFrac, height)}
+                              />
+                            </div>
+                          );
+                        })}
+
+                        {/* Interactive Conflict Overlay Block */}
+                        {showConflictOverlay && (() => {
+                          const cStart = getFractionalHoursFromNine(`${selectedDate}T${bookForm.startHour}:00`);
+                          const cEnd = getFractionalHoursFromNine(`${selectedDate}T${bookForm.endHour}:00`);
+                          const cTop = cStart * 80;
+                          const cHeight = (cEnd - cStart) * 80;
+
+                          return (
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: `${cTop}px`,
+                                height: `${cHeight}px`,
+                                left: "10px",
+                                right: "10px",
+                                border: "2px dashed #ef4444",
+                                background: "rgba(239, 68, 68, 0.1)",
+                                borderRadius: "6px",
+                                padding: "8px 12px",
+                                color: "#f87171",
+                                fontSize: "0.85rem",
+                                fontWeight: "500",
+                                pointerEvents: "none",
+                                zIndex: 1
+                              }}
+                            >
+                              Requested {bookForm.startHour} to {bookForm.endHour} - conflict - slot is unavailable
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </>
                 )

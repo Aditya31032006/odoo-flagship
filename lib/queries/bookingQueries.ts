@@ -127,5 +127,22 @@ export const bookingQueries = {
        WHERE id = $1`,
       [bookingId, cancelledBy, reason]
     );
+  },
+
+  async updateBookingTimes(
+    bookingId: number,
+    startAt: string,
+    endAt: string,
+    executor: any = defaultQuery
+  ) {
+    return runQuery(
+      executor,
+      `UPDATE resource_bookings 
+       SET start_at = $2, 
+           end_at = $3, 
+           updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1`,
+      [bookingId, startAt, endAt]
+    );
   }
 };
