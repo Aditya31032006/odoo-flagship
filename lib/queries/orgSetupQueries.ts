@@ -173,5 +173,43 @@ export const orgSetupQueries = {
        VALUES ($1, $2, $3, $4, $5)`,
       [userId, previousRole, newRole, changedBy, 'Role updated via Organization Setup dashboard']
     );
+  },
+
+  // ── Locations ─────────────────────────────────────────────
+  async getLocations(executor: any = defaultQuery) {
+    return runQuery(
+      executor,
+      `SELECT l.*, p.name AS parent_name
+       FROM locations l
+       LEFT JOIN locations p ON l.parent_location_id = p.id
+       ORDER BY l.id ASC`
+    );
+  },
+
+  async createLocation(name: string, code: string, address: string, parentId: number | null, createdBy: number, executor: any = defaultQuery) {
+    return runQuery(
+      executor,
+      `INSERT INTO locations (name, code, address_line_1, parent_location_id, created_by)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [name, code, address, parentId, createdBy]
+    );
+  },
+
+  async updateLocation(id: number, name: string, code: string, address: string, parentId: number | null, executor: any = defaultQuery) {
+    return runQuery(
+      executor,
+      `UPDATE locations 
+       SET name = $1, code = $2, address_line_1 = $3, parent_location_id = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5`,
+      [name, code, address, parentId, id]
+    );
+  },
+
+  async updateLocationStatus(id: number, isActive: boolean, executor: any = defaultQuery) {
+    return runQuery(
+      executor,
+      `UPDATE locations SET is_active = $1 WHERE id = $2`,
+      [isActive, id]
+    );
   }
 };

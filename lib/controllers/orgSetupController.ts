@@ -195,5 +195,60 @@ export const orgSetupController = {
       console.error("updateEmployeeStatus Controller Error:", error);
       return NextResponse.json({ message: error.message || "Internal server error" }, { status: 400 });
     }
+  },
+
+  // ── Locations ─────────────────────────────────────────────
+  async getLocations(req: Request) {
+    try {
+      const { verified } = await verifyAdminUser(req);
+      if (!verified) {
+        return NextResponse.json({ message: "Access Denied: Admin role required." }, { status: 403 });
+      }
+
+      const data = await orgSetupService.getLocations();
+      return NextResponse.json(data, { status: 200 });
+    } catch (error: any) {
+      console.error("getLocations Controller Error:", error);
+      return NextResponse.json({ message: "Internal server error", details: error.message }, { status: 500 });
+    }
+  },
+
+  async createLocation(req: Request) {
+    try {
+      const { id: adminId, verified } = await verifyAdminUser(req);
+      if (!verified) {
+        return NextResponse.json({ message: "Access Denied: Admin role required." }, { status: 403 });
+      }
+
+      const { name, code, address, parent_location_id } = await req.json();
+      const parentId = parent_location_id ? parseInt(parent_location_id, 10) : null;
+      const loc = await orgSetupService.createLocation(name, code, address || "", parentId, adminId);
+      return NextResponse.json(loc, { status: 201 });
+    } catch (error: any) {
+      console.error("createLocation Controller Error:", error);
+      return NextResponse.json({ message: error.message || "Internal server error" }, { status: 400 });
+    }
+  },
+
+  async updateLocation(req: Request) {
+    try {
+      const { verified } = await verifyAdminUser(req);
+      if (!verified) {
+        return NextResponse.json({ message: "Access Denied: Admin role required." }, { status: 403 });
+      }
+
+      const { id, name, code, address, parent_location_id, is_active } = await req.json();
+      const parentId = parent_location_id ? parseInt(parent_location_id, 10) : null;
+      
+      if (is_active !== undefined) {
+        await orgSetupService.updateLocationStatus(parseInt(id, 10), is_active);
+      } else {
+        await orgSetupService.updateLocation(parseInt(id, 10), name, code, address || "", parentId);
+      }
+      return NextResponse.json({ message: "Location updated successfully" }, { status: 200 });
+    } catch (error: any) {
+      console.error("updateLocation Controller Error:", error);
+      return NextResponse.json({ message: error.message || "Internal server error" }, { status: 400 });
+    }
   }
 };

@@ -42,7 +42,14 @@ export default function Notifications() {
   const [activeTab, setActiveTab] = useState<"NOTIFICATIONS" | "AUDIT_TRAIL">("NOTIFICATIONS");
 
   // Notifications Filter Category
-  const [notifCategory, setNotifCategory] = useState<"ALL" | "ALERTS" | "APPROVALS" | "BOOKINGS" | "MAINTENANCE">("ALL");
+  const [notifCategory, setNotifCategory] = useState<"ALL" | "ALERTS" | "APPROVALS" | "BOOKINGS" | "MAINTENANCE" | "AUDIT">("ALL");
+
+  // Activity Logs Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterAction, setFilterAction] = useState("ALL");
+  const [filterEntity, setFilterEntity] = useState("ALL");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Data States
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
@@ -167,12 +174,64 @@ export default function Notifications() {
   // Filter calculations
   const getFilteredNotifications = () => {
     return notifications.filter(n => {
+      const type = n.type || "";
       if (notifCategory === "ALL") return true;
-      if (notifCategory === "ALERTS" && n.type === "ALERT") return true;
-      if (notifCategory === "APPROVALS" && n.type === "APPROVAL") return true;
-      if (notifCategory === "BOOKINGS" && n.type === "BOOKING") return true;
-      if (notifCategory === "MAINTENANCE" && n.type === "MAINTENANCE") return true;
+      if (notifCategory === "ALERTS") {
+        return type.includes("ALERT") || type.includes("OVERDUE") || type.includes("WARNING") || type.includes("UPCOMING") || type === "SYSTEM";
+      }
+      if (notifCategory === "APPROVALS") {
+        return type.includes("APPROVAL") || type.includes("APPROVED") || type.includes("REJECTED") || type.includes("REQUESTED") || type.includes("ASSIGNED");
+      }
+      if (notifCategory === "BOOKINGS") {
+        return type.includes("BOOKING");
+      }
+      if (notifCategory === "MAINTENANCE") {
+        return type.includes("MAINTENANCE") || type.includes("TECHNICIAN");
+      }
+      if (notifCategory === "AUDIT") {
+        return type.includes("AUDIT");
+      }
       return false;
+    });
+  };
+
+  const getFilteredLogs = () => {
+    return logs.filter(log => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const actorName = (log.actor_name || "").toLowerCase();
+        const action = (log.action || "").toLowerCase();
+        const desc = (log.description || "").toLowerCase();
+        if (!actorName.includes(query) && !action.includes(query) && !desc.includes(query)) {
+          return false;
+        }
+      }
+
+      if (filterAction !== "ALL") {
+        if ((log.action || "").toUpperCase() !== filterAction.toUpperCase()) {
+          return false;
+        }
+      }
+
+      if (filterEntity !== "ALL") {
+        if ((log.entity_type || "").toUpperCase() !== filterEntity.toUpperCase()) {
+          return false;
+        }
+      }
+
+      if (startDate) {
+        const logDate = new Date(log.created_at);
+        const start = new Date(startDate);
+        if (logDate < start) return false;
+      }
+      if (endDate) {
+        const logDate = new Date(log.created_at);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (logDate > end) return false;
+      }
+
+      return true;
     });
   };
 
@@ -327,6 +386,7 @@ export default function Notifications() {
                 <button className={`filter-pill ${notifCategory === "APPROVALS" ? "active" : ""}`} onClick={() => setNotifCategory("APPROVALS")}>Approvals</button>
                 <button className={`filter-pill ${notifCategory === "BOOKINGS" ? "active" : ""}`} onClick={() => setNotifCategory("BOOKINGS")}>Bookings</button>
                 <button className={`filter-pill ${notifCategory === "MAINTENANCE" ? "active" : ""}`} onClick={() => setNotifCategory("MAINTENANCE")}>Maintenance</button>
+                <button className={`filter-pill ${notifCategory === "AUDIT" ? "active" : ""}`} onClick={() => setNotifCategory("AUDIT")}>Audit</button>
               </div>
 
               {loading ? (
@@ -357,16 +417,83 @@ export default function Notifications() {
             </>
           ) : (
             <>
+              {/* Audit Logs Filters */}
+              <div className="category-filter-row" style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "20px", alignItems: "center" }}>
+                <input 
+                  type="text" 
+                  placeholder="Search logs by actor, action, description..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ flex: "1", minWidth: "200px", padding: "8px 12px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none" }}
+                />
+                
+                <select
+                  value={filterAction}
+                  onChange={e => setFilterAction(e.target.value)}
+                  style={{ padding: "8px 12px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                >
+                  <option value="ALL">All Actions</option>
+                  <option value="LOGIN">LOGIN</option>
+                  <option value="LOGOUT">LOGOUT</option>
+                  <option value="CREATE">CREATE</option>
+                  <option value="UPDATE">UPDATE</option>
+                  <option value="DELETE">DELETE</option>
+                  <option value="ASSIGN">ASSIGN</option>
+                  <option value="ALLOCATE">ALLOCATE</option>
+                  <option value="RETURN">RETURN</option>
+                  <option value="TRANSFER">TRANSFER</option>
+                  <option value="RESOLVE">RESOLVE</option>
+                  <option value="COMPLETE">COMPLETE</option>
+                  <option value="EXPORT">EXPORT</option>
+                </select>
+
+                <select
+                  value={filterEntity}
+                  onChange={e => setFilterEntity(e.target.value)}
+                  style={{ padding: "8px 12px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                >
+                  <option value="ALL">All Modules</option>
+                  <option value="ASSET">Asset</option>
+                  <option value="DEPARTMENT">Department</option>
+                  <option value="CATEGORY">Category</option>
+                  <option value="BOOKING">Booking</option>
+                  <option value="MAINTENANCE">Maintenance</option>
+                  <option value="AUDIT">Audit</option>
+                  <option value="REPORT">Report</option>
+                  <option value="USER">User</option>
+                </select>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "0.8rem", color: "#64748b" }}>From:</span>
+                  <input 
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    style={{ padding: "6px 10px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "0.8rem", color: "#64748b" }}>To:</span>
+                  <input 
+                    type="date"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    style={{ padding: "6px 10px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                  />
+                </div>
+              </div>
+
               {loading ? (
                 <div style={{ color: "#64748b", textAlign: "center", padding: "40px" }}>Compiling audit trail logs...</div>
               ) : (
                 <div className="audit-timeline">
-                  {logs.length === 0 ? (
+                  {getFilteredLogs().length === 0 ? (
                     <div style={{ textAlign: "center", padding: "40px", color: "#64748b", border: "1px dashed #162238", borderRadius: "8px" }}>
-                      No activity logs recorded.
+                      No activity logs match the selected filters.
                     </div>
                   ) : (
-                    logs.map(log => {
+                    getFilteredLogs().map(log => {
                       const isExpanded = expandedLogId === log.id;
                       return (
                         <div
