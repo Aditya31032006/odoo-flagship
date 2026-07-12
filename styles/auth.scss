@@ -1,0 +1,526 @@
+@use 'sass:color';
+
+// ── Google Font Imports ──────────────────────────────────
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+// ── Theme Variables ──────────────────────────────────────
+$dark-bg:            #070d19;
+$card-bg:            #0d1527;
+$accent-color:       #48e5a0;
+$border-color:       #1a2436;
+$border-color-focus: #48e5a0;
+$text-primary:       #ffffff;
+$text-muted:         #64748b;
+$text-placeholder:   #334155;
+
+$font-serif:         'Inter', sans-serif;
+$font-sans:          'Inter', sans-serif;
+
+// ── Reset / Base ─────────────────────────────────────────
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+// ── Background Grid (Architectural) ─────────────────────
+.structural-grid {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, #2E3035 1px, transparent 1px),
+    linear-gradient(to bottom, #2E3035 1px, transparent 1px);
+  background-size: 8.333333% 80px;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.grid-line-vertical {
+  width: 1px;
+  background-color: #2E3035;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  z-index: 0;
+
+  &.left-edge {
+    left: 64px;
+  }
+  
+  &.right-edge {
+    right: 64px;
+  }
+
+  &.center-third {
+    left: 33.333333%;
+    display: none;
+    @media (min-width: 1024px) {
+      display: block;
+    }
+  }
+}
+
+// ── Page Wrapper ───────────────────────────────────────
+.auth-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100dvh;
+  background-color: $dark-bg;
+  color: $text-primary;
+  font-family: $font-sans;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  padding: 24px 16px;
+  z-index: 1;
+  overflow-y: auto; // Mobile can scroll normally with visible scrollbar if needed
+
+  @media (min-width: 768px) {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden; // Strict no-scroll on desktop
+    justify-content: center; // Center vertically for clean balanced spacing
+    padding: 32px 16px;
+
+    // Hide scrollbar globally for desktop
+    &, * {
+      scrollbar-width: none; /* Firefox */
+      &::-webkit-scrollbar {
+        display: none; /* Safari/Chrome */
+      }
+    }
+  }
+}
+
+// ── Logo Header ────────────────────────────────────────
+.auth-brand-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 24px;
+  z-index: 2;
+  position: relative;
+
+  .brand-logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border: 1.5px solid #48e5a0;
+    border-radius: 12px;
+    color: #48e5a0;
+    margin-bottom: 12px;
+    box-shadow: 0 0 15px rgba(72, 229, 160, 0.2);
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .brand-title {
+    font-family: $font-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: $text-primary;
+    line-height: 1.2;
+  }
+
+  .brand-subtitle {
+    font-family: $font-sans;
+    font-size: 0.8rem;
+    color: $text-muted;
+    margin-top: 4px;
+    font-weight: 400;
+  }
+}
+
+// ── Auth Card ─────────────────────────────────────────
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background-color: #0b1222;
+  border: 1px solid #141f35;
+  border-radius: 12px;
+  padding: 32px 28px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  
+  @media (min-width: 768px) {
+    padding: 40px 36px;
+    margin-bottom: 0;
+  }
+
+  .card-header {
+    margin-bottom: 24px;
+    text-align: center;
+
+    .card-title {
+      font-family: $font-serif;
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: $text-primary;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .card-description {
+      font-size: 0.85rem;
+      color: $text-muted;
+      line-height: 1.5;
+    }
+  }
+
+  // ── Field Group ──
+  .auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    position: relative;
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    label {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #94a3b8;
+    }
+
+    .forgot-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #48e5a0;
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.85;
+      }
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      input {
+        width: 100%;
+        background: #090f1d;
+        border: 1px solid #162238;
+        border-radius: 6px;
+        padding: 14px 16px;
+        font-family: $font-sans;
+        font-size: 0.95rem;
+        color: $text-primary;
+        outline: none;
+        transition: all 0.25s ease;
+
+        &::placeholder {
+          color: #334155;
+          font-weight: 400;
+        }
+
+        &:focus {
+          border-color: #48e5a0;
+          box-shadow: 0 0 10px rgba(72, 229, 160, 0.15);
+        }
+
+        &.has-no-icon {
+          padding-right: 16px;
+        }
+      }
+
+      .input-icon {
+        position: absolute;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $text-muted;
+        pointer-events: none;
+        opacity: 0.7;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .eye-toggle-btn {
+        position: absolute;
+        right: 14px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: #64748b;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s ease;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+
+        &:hover {
+          color: $text-primary;
+        }
+      }
+    }
+  }
+
+  // ── Submit Button ──
+  .auth-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #48e5a0, #34d399);
+    color: #070d19;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(72, 229, 160, 0.2);
+
+    &:hover {
+      background: linear-gradient(135deg, #5ef2b1, #3fe0a6);
+      box-shadow: 0 6px 20px rgba(72, 229, 160, 0.35);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 14px rgba(72, 229, 160, 0.2);
+    }
+
+    .btn-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 2px;
+      
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  // ── Divider ──
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin: 16px 0;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background-color: #162238;
+    }
+
+    span {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #94a3b8;
+    }
+  }
+
+  // ── Text Button / Link ──
+  .auth-text-btn-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 12px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #64748b;
+    line-height: 1.5;
+
+    .auth-text-btn {
+      margin-top: 12px;
+      width: 100%;
+    }
+  }
+
+  .auth-text-btn {
+    display: inline-block;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #1a273f;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ffffff;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: #334155;
+    }
+  }
+
+  // ── Card Footer ──
+  .card-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid #162238;
+    margin-top: 20px;
+    padding-top: 20px;
+    font-size: 0.85rem;
+    gap: 12px;
+
+    .footer-label {
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      color: #64748b;
+    }
+
+    .auth-text-btn {
+      margin-top: 0;
+    }
+  }
+}
+
+// ── Register Social Proof / Columns ───────────────────
+.auth-social-proof {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  width: 100%;
+  max-width: 480px;
+  margin-top: 12px;
+  opacity: 0.65;
+  z-index: 2;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .proof-item {
+    display: flex;
+    gap: 16px;
+    align-items: start;
+
+    .proof-icon {
+      color: $text-primary;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .proof-content {
+      h4 {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: $text-primary;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+
+      p {
+        font-size: 0.7rem;
+        line-height: 1.5;
+        color: $text-muted;
+      }
+    }
+  }
+}
+
+// ── Outer Page Footer ─────────────────────────────────
+.auth-page-footer {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid $border-color;
+  padding: 24px 0;
+  margin-top: auto;
+  gap: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: $text-muted;
+  z-index: 2;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    padding: 32px 0 16px;
+  }
+
+  .footer-copyright {
+    text-align: center;
+    @media (min-width: 768px) {
+      text-align: left;
+    }
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    a {
+      color: $text-muted;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: $text-primary;
+      }
+    }
+  }
+}

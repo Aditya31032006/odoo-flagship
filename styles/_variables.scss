@@ -1,0 +1,14 @@
+@use 'sass:color';
+
+// ── Theme Variables ──────────────────────────────────────
+$dark-bg:            #0d0d0d;
+$card-bg:            #141313;
+$border-color:       #2e3035;
+$accent-color:       #ffffff;
+$accent-green:       #4de082;
+$text-primary:       #ffffff;
+$text-muted:         #8e9192;
+$text-placeholder:   rgba(255, 255, 255, 0.25);
+
+$font-serif:         'Playfair Display', Georgia, serif;
+$font-sans:          'Plus Jakarta Sans', 'Inter', sans-serif;
