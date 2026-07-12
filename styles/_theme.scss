@@ -1,0 +1,62 @@
+@use 'sass:color';
+
+// ========================================================
+// NEUMORPHIC THEME VARIABLES & MIXINS
+// ========================================================
+
+// ── Variables ──────────────────────────────────────────
+$nm-bg:            #e8eaf0;
+$nm-bg-card:       #eef0f5;
+$nm-shadow-light:  #ffffff;
+$nm-shadow-dark:   #c8cad4;
+
+$nm-text-primary:  #3a3d52;
+$nm-text-secondary:#7a7f9a;
+$nm-text-muted:    #a8adc4;
+$nm-accent:        #5b6af0;
+$nm-accent-hover:  #4a58e0;
+
+$nm-radius-sm:     10px;
+$nm-radius-md:     16px;
+$nm-radius-lg:     24px;
+$nm-radius-xl:     32px;
+$nm-radius-pill:   999px;
+
+$nm-font:          'Inter', 'Segoe UI', system-ui, sans-serif;
+
+// ── Mixins ─────────────────────────────────────────────
+
+@mixin nm-raised($radius: $nm-radius-md) {
+  background: $nm-bg-card;
+  border-radius: $radius;
+  box-shadow:
+    8px  8px  18px $nm-shadow-dark,
+    -8px -8px 18px $nm-shadow-light;
+}
+
+@mixin nm-inset($radius: $nm-radius-md) {
+  background: $nm-bg;
+  border-radius: $radius;
+  box-shadow:
+    inset 5px  5px 12px $nm-shadow-dark,
+    inset -5px -5px 12px $nm-shadow-light;
+}
+
+@mixin nm-inset-light($radius: $nm-radius-md) {
+  background: $nm-bg-card;
+  border-radius: $radius;
+  box-shadow:
+    inset 3px  3px 8px rgba($nm-shadow-dark, 0.65),
+    inset -3px -3px 8px $nm-shadow-light;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-col {
+  display: flex;
+  flex-direction: column;
+}

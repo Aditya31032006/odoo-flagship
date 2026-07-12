@@ -1,0 +1,335 @@
+// ── Organization Setup Style System ──────────────────────
+// Deep dark layout with interactive panel tabs and management overlays
+
+$bg-page:        #070d19;
+$bg-card:        #0b1222;
+$border-color:   #162238;
+$accent-green:   #48e5a0;
+$text-title:     #ffffff;
+$text-body:      #94a3b8;
+$text-muted:     #64748b;
+$font-sans:      'Inter', sans-serif;
+
+.org-setup-content {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// ── Tab Controls ──
+.tab-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .tab-buttons {
+    display: flex;
+    gap: 10px;
+
+    .tab-btn {
+      background-color: transparent;
+      border: 1px solid $border-color;
+      color: $text-body;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+        color: $text-title;
+      }
+
+      &.active {
+        background-color: rgba(72, 229, 160, 0.08);
+        border-color: $accent-green;
+        color: $accent-green;
+        box-shadow: 0 0 10px rgba(72, 229, 160, 0.1);
+      }
+    }
+  }
+
+  .add-action-btn {
+    background-color: rgba(72, 229, 160, 0.08);
+    border: 1.5px solid $accent-green;
+    color: $accent-green;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover {
+      background-color: $accent-green;
+      color: #070d19;
+      box-shadow: 0 0 15px rgba(72, 229, 160, 0.3);
+    }
+  }
+}
+
+// ── Data Table Styling ──
+.table-card {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+
+    th {
+      background-color: #090f1d;
+      color: $text-muted;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 16px;
+      border-bottom: 1px solid $border-color;
+      font-size: 0.75rem;
+    }
+
+    td {
+      padding: 16px;
+      color: $text-body;
+      border-bottom: 1px solid $border-color;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .row-title {
+      font-weight: 500;
+      color: $text-title;
+    }
+  }
+}
+
+// ── Status Badges & Toggle Switches ──
+.status-pill {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active {
+    background-color: rgba(72, 229, 160, 0.08);
+    color: $accent-green;
+    border: 1px solid rgba(72, 229, 160, 0.2);
+  }
+
+  &.inactive {
+    background-color: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+}
+
+// ── Dropdown Select inside Table Cells ──
+.cell-select {
+  background-color: #090f1d;
+  border: 1px solid $border-color;
+  color: $text-body;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:focus {
+    border-color: $accent-green;
+  }
+}
+
+// ── Interactive Management Modals ──
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(7, 13, 25, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-card {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: modalFadeIn 0.3s ease;
+
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid $border-color;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: $text-title;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: $text-muted;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: $text-title;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 20px 24px;
+    border-top: 1px solid $border-color;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+
+    .cancel-btn {
+      background: transparent;
+      border: 1px solid $border-color;
+      color: $text-body;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+        color: $text-title;
+      }
+    }
+
+    .submit-btn {
+      background-color: $accent-green;
+      border: none;
+      color: #070d19;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        box-shadow: 0 0 10px rgba(72, 229, 160, 0.3);
+      }
+    }
+  }
+}
+
+// ── Custom Fields List Builder ──
+.custom-fields-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid $border-color;
+  padding-top: 16px;
+  margin-top: 8px;
+
+  .builder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: $text-muted;
+    }
+
+    .add-field-btn {
+      background: transparent;
+      border: none;
+      color: $accent-green;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr auto;
+    gap: 8px;
+    align-items: center;
+
+    .delete-field-btn {
+      background: transparent;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 6px;
+
+      &:hover {
+        color: #fca5a5;
+      }
+    }
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

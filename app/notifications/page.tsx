@@ -1,0 +1,545 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "../../styles/dashboard.scss";
+import "../../styles/notifications.scss";
+
+// Interfaces
+interface SystemNotification {
+  id: string;
+  type: string; // SYSTEM, APPROVAL, MAINTENANCE, BOOKING, ALERT
+  priority: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+interface ActivityLog {
+  id: string;
+  actor_name: string;
+  action: string;
+  entity_type: string;
+  description: string;
+  old_values: any;
+  new_values: any;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
+export default function Notifications() {
+  const router = useRouter();
+
+  // Auth States
+  const [currentUser, setCurrentUser] = useState<{ fullName: string; role: string } | null>(null);
+
+  // Active View Tab
+  const [activeTab, setActiveTab] = useState<"NOTIFICATIONS" | "AUDIT_TRAIL">("NOTIFICATIONS");
+
+  // Notifications Filter Category
+  const [notifCategory, setNotifCategory] = useState<"ALL" | "ALERTS" | "APPROVALS" | "BOOKINGS" | "MAINTENANCE" | "AUDIT">("ALL");
+
+  // Activity Logs Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterAction, setFilterAction] = useState("ALL");
+  const [filterEntity, setFilterEntity] = useState("ALL");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  // Data States
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Collapsible logs tracking
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
+  // Decode User JWT from Cookie
+  useEffect(() => {
+    try {
+      const cookies = document.cookie.split(";");
+      const authCookie = cookies.find(c => c.trim().startsWith("accessToken="));
+      if (authCookie) {
+        const token = authCookie.split("=")[1];
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          window.atob(base64)
+            .split("")
+            .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+        );
+        const payload = JSON.parse(jsonPayload);
+        if (payload) {
+          setCurrentUser({
+            fullName: payload.full_name || "Employee User",
+            role: payload.role || "EMPLOYEE"
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  // Fetch Notifications
+  const fetchNotificationsList = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/notifications");
+      if (!res.ok) throw new Error("Failed to load notifications");
+      const data = await res.json();
+      setNotifications(data);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch Audit Trail Logs
+  const fetchAuditLogs = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/activity-logs");
+      if (!res.ok) throw new Error("Failed to load audit logs");
+      const data = await res.json();
+      setLogs(data);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "NOTIFICATIONS") {
+      fetchNotificationsList();
+    } else {
+      fetchAuditLogs();
+    }
+  }, [activeTab]);
+
+  const handleLogout = () => {
+    document.cookie = "accessToken=; Max-Age=0; path=/";
+    toast.success("Logged out successfully");
+    setTimeout(() => {
+      router.push("/login");
+    }, 1000);
+  };
+
+  // Mark notification read status
+  const handleMarkRead = async (id: string, isRead: boolean) => {
+    if (isRead) return; // already read
+    try {
+      const res = await fetch("/api/notifications", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to update notification");
+      }
+
+      // Local update
+      setNotifications(prev =>
+        prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  // Safe relative date/time parser
+  const getRelativeTimeText = (dateStr: string) => {
+    const created = new Date(dateStr);
+    const diffMs = Date.now() - created.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  // Filter calculations
+  const getFilteredNotifications = () => {
+    return notifications.filter(n => {
+      const type = n.type || "";
+      if (notifCategory === "ALL") return true;
+      if (notifCategory === "ALERTS") {
+        return type.includes("ALERT") || type.includes("OVERDUE") || type.includes("WARNING") || type.includes("UPCOMING") || type === "SYSTEM";
+      }
+      if (notifCategory === "APPROVALS") {
+        return type.includes("APPROVAL") || type.includes("APPROVED") || type.includes("REJECTED") || type.includes("REQUESTED") || type.includes("ASSIGNED");
+      }
+      if (notifCategory === "BOOKINGS") {
+        return type.includes("BOOKING");
+      }
+      if (notifCategory === "MAINTENANCE") {
+        return type.includes("MAINTENANCE") || type.includes("TECHNICIAN");
+      }
+      if (notifCategory === "AUDIT") {
+        return type.includes("AUDIT");
+      }
+      return false;
+    });
+  };
+
+  const getFilteredLogs = () => {
+    return logs.filter(log => {
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const actorName = (log.actor_name || "").toLowerCase();
+        const action = (log.action || "").toLowerCase();
+        const desc = (log.description || "").toLowerCase();
+        if (!actorName.includes(query) && !action.includes(query) && !desc.includes(query)) {
+          return false;
+        }
+      }
+
+      if (filterAction !== "ALL") {
+        if ((log.action || "").toUpperCase() !== filterAction.toUpperCase()) {
+          return false;
+        }
+      }
+
+      if (filterEntity !== "ALL") {
+        if ((log.entity_type || "").toUpperCase() !== filterEntity.toUpperCase()) {
+          return false;
+        }
+      }
+
+      if (startDate) {
+        const logDate = new Date(log.created_at);
+        const start = new Date(startDate);
+        if (logDate < start) return false;
+      }
+      if (endDate) {
+        const logDate = new Date(log.created_at);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (logDate > end) return false;
+      }
+
+      return true;
+    });
+  };
+
+  // Safe color mapper box helper
+  const getColorBoxClass = (type: string, message: string) => {
+    const msg = message.toLowerCase();
+    if (msg.includes("assigned")) return "allocations";
+    if (msg.includes("maintenance request approved") || msg.includes("repaired")) return "maintenance";
+    if (msg.includes("booking confirmed")) return "bookings";
+    if (msg.includes("transfer approved")) return "transfers";
+    if (msg.includes("overdue return")) return "overdue";
+    if (msg.includes("discrepancy flagged")) return "audit";
+    return "system";
+  };
+
+  return (
+    <div className="dashboard-container">
+      <ToastContainer position="top-right" autoClose={2000} theme="dark" />
+
+      {/* ── Left Sidebar Navigation ── */}
+      <aside className="dashboard-sidebar">
+        <div className="sidebar-logo">
+          <div className="logo-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M16 8h.01" />
+              <path d="M12 8H8v8h4c2.2 0 4-1.8 4-4s-1.8-4-4-4z" />
+            </svg>
+          </div>
+          <span className="sidebar-logo-text logo-text">AssetFlow</span>
+        </div>
+
+        <nav className="sidebar-menu">
+          <Link href="/dashboard" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span>Dashboard</span>
+          </Link>
+          <Link href="/organization-setup" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            <span>Organization Setup</span>
+          </Link>
+          <Link href="/assets" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span>Assets</span>
+          </Link>
+          <Link href="/allocation-transfer" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            <span>Allocation & Transfer</span>
+          </Link>
+          <Link href="/resource-booking" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Resource Booking</span>
+          </Link>
+          <Link href="/maintenance" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            </svg>
+            <span>Maintenance</span>
+          </Link>
+          <Link href="/audit" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Audit</span>
+          </Link>
+          <Link href="/reports" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Reports</span>
+          </Link>
+          <Link href="/notifications" className="menu-item active">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span>Notifications</span>
+          </Link>
+        </nav>
+
+        <div className="sidebar-user">
+          <div className="user-avatar">
+            {currentUser?.fullName ? currentUser.fullName.split(" ").map(n => n[0]).join("").toUpperCase() : "US"}
+          </div>
+          <div className="user-info">
+            <span className="user-name">{currentUser?.fullName}</span>
+            <span className="user-role">{currentUser?.role}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Main Panel ── */}
+      <main className="dashboard-main">
+        {/* Header */}
+        <header className="dashboard-header">
+          <div className="header-search">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" placeholder="Lookup actions or notification timestamps..." disabled />
+          </div>
+
+          <div className="header-actions">
+            <button className="logout-btn" onClick={handleLogout}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Logout
+            </button>
+          </div>
+        </header>
+
+        {/* Content Body */}
+        <div className="notifications-content">
+          
+          {/* Tab Navigation header */}
+          <div className="notif-tab-nav">
+            <button
+              className={activeTab === "NOTIFICATIONS" ? "active" : ""}
+              onClick={() => setActiveTab("NOTIFICATIONS")}
+            >
+              Notifications Inbox
+            </button>
+            {(currentUser?.role === "ADMIN" || currentUser?.role === "ASSET_MANAGER") && (
+              <button
+                className={activeTab === "AUDIT_TRAIL" ? "active" : ""}
+                onClick={() => setActiveTab("AUDIT_TRAIL")}
+              >
+                System Audit Trail
+              </button>
+            )}
+          </div>
+
+          {activeTab === "NOTIFICATIONS" ? (
+            <>
+              {/* Category Pills Filters */}
+              <div className="category-filter-row">
+                <button className={`filter-pill ${notifCategory === "ALL" ? "active" : ""}`} onClick={() => setNotifCategory("ALL")}>All</button>
+                <button className={`filter-pill ${notifCategory === "ALERTS" ? "active" : ""}`} onClick={() => setNotifCategory("ALERTS")}>Alerts</button>
+                <button className={`filter-pill ${notifCategory === "APPROVALS" ? "active" : ""}`} onClick={() => setNotifCategory("APPROVALS")}>Approvals</button>
+                <button className={`filter-pill ${notifCategory === "BOOKINGS" ? "active" : ""}`} onClick={() => setNotifCategory("BOOKINGS")}>Bookings</button>
+                <button className={`filter-pill ${notifCategory === "MAINTENANCE" ? "active" : ""}`} onClick={() => setNotifCategory("MAINTENANCE")}>Maintenance</button>
+                <button className={`filter-pill ${notifCategory === "AUDIT" ? "active" : ""}`} onClick={() => setNotifCategory("AUDIT")}>Audit</button>
+              </div>
+
+              {loading ? (
+                <div style={{ color: "#64748b", textAlign: "center", padding: "40px" }}>Loading notifications...</div>
+              ) : (
+                <div className="notifications-list">
+                  {getFilteredNotifications().length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "40px", color: "#64748b", border: "1px dashed #162238", borderRadius: "8px" }}>
+                      Your notification inbox is empty.
+                    </div>
+                  ) : (
+                    getFilteredNotifications().map(notif => (
+                      <div
+                        className={`notif-row ${notif.is_read ? "read" : ""}`}
+                        key={notif.id}
+                        onClick={() => handleMarkRead(notif.id, notif.is_read)}
+                      >
+                        <div className="notif-left">
+                          <div className={`notif-color-box ${getColorBoxClass(notif.type, notif.message)}`} />
+                          <span className="notif-message">{notif.message}</span>
+                        </div>
+                        <span className="notif-time">{getRelativeTimeText(notif.created_at)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Audit Logs Filters */}
+              <div className="category-filter-row" style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "20px", alignItems: "center" }}>
+                <input 
+                  type="text" 
+                  placeholder="Search logs by actor, action, description..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ flex: "1", minWidth: "200px", padding: "8px 12px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none" }}
+                />
+                
+                <select
+                  value={filterAction}
+                  onChange={e => setFilterAction(e.target.value)}
+                  style={{ padding: "8px 12px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                >
+                  <option value="ALL">All Actions</option>
+                  <option value="LOGIN">LOGIN</option>
+                  <option value="LOGOUT">LOGOUT</option>
+                  <option value="CREATE">CREATE</option>
+                  <option value="UPDATE">UPDATE</option>
+                  <option value="DELETE">DELETE</option>
+                  <option value="ASSIGN">ASSIGN</option>
+                  <option value="ALLOCATE">ALLOCATE</option>
+                  <option value="RETURN">RETURN</option>
+                  <option value="TRANSFER">TRANSFER</option>
+                  <option value="RESOLVE">RESOLVE</option>
+                  <option value="COMPLETE">COMPLETE</option>
+                  <option value="EXPORT">EXPORT</option>
+                </select>
+
+                <select
+                  value={filterEntity}
+                  onChange={e => setFilterEntity(e.target.value)}
+                  style={{ padding: "8px 12px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                >
+                  <option value="ALL">All Modules</option>
+                  <option value="ASSET">Asset</option>
+                  <option value="DEPARTMENT">Department</option>
+                  <option value="CATEGORY">Category</option>
+                  <option value="BOOKING">Booking</option>
+                  <option value="MAINTENANCE">Maintenance</option>
+                  <option value="AUDIT">Audit</option>
+                  <option value="REPORT">Report</option>
+                  <option value="USER">User</option>
+                </select>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "0.8rem", color: "#64748b" }}>From:</span>
+                  <input 
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    style={{ padding: "6px 10px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "0.8rem", color: "#64748b" }}>To:</span>
+                  <input 
+                    type="date"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    style={{ padding: "6px 10px", background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", fontSize: "0.85rem", outline: "none", cursor: "pointer" }}
+                  />
+                </div>
+              </div>
+
+              {loading ? (
+                <div style={{ color: "#64748b", textAlign: "center", padding: "40px" }}>Compiling audit trail logs...</div>
+              ) : (
+                <div className="audit-timeline">
+                  {getFilteredLogs().length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "40px", color: "#64748b", border: "1px dashed #162238", borderRadius: "8px" }}>
+                      No activity logs match the selected filters.
+                    </div>
+                  ) : (
+                    getFilteredLogs().map(log => {
+                      const isExpanded = expandedLogId === log.id;
+                      return (
+                        <div
+                          className="timeline-item"
+                          key={log.id}
+                          onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
+                        >
+                          <div className="item-header">
+                            <span className="item-action-tag">{log.action}</span>
+                            <span className="item-time">{getRelativeTimeText(log.created_at)}</span>
+                          </div>
+                          <span className="item-desc">{log.description}</span>
+                          <div className="item-meta">
+                            <span>Actor: <strong>{log.actor_name || "System"}</strong></span>
+                            {log.ip_address && <span>IP: {log.ip_address}</span>}
+                            {log.user_agent && <span>Browser: {log.user_agent.split(" ")[0]}</span>}
+                          </div>
+
+                          {/* Expanded JSON details */}
+                          {isExpanded && (log.old_values || log.new_values) && (
+                            <div className="json-diff-container">
+                              {log.old_values && (
+                                <>
+                                  <label>Previous Values</label>
+                                  <pre>{JSON.stringify(log.old_values, null, 2)}</pre>
+                                </>
+                              )}
+                              {log.new_values && (
+                                <>
+                                  <label>Updated Values</label>
+                                  <pre className="new-val">{JSON.stringify(log.new_values, null, 2)}</pre>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+        </div>
+      </main>
+    </div>
+  );
+}
