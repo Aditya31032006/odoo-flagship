@@ -1,40 +1,70 @@
-<<<<<<< HEAD
-# odoo-flagship
-=======
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Assest Flow: Enterprise Asset & Resource Management System
 
-## Getting Started
+Assest Flow is a comprehensive, centralized platform designed to modernize and streamline how organizations manage their assets, resources, departments, and maintenance schedules. 
 
-First, run the development server:
+## 🎯 Purpose and Problem Statement
+
+**The Problem:** In many growing organizations, managing physical assets, coordinating maintenance, auditing inventory, and handling resource bookings are siloed processes. Relying on spreadsheets or fragmented legacy software leads to misplaced assets, double-booked resources, missed maintenance schedules, and a lack of accountability.
+
+**Our Solution:**  Assest Flow bridges these gaps by providing a unified, real-time dashboard that integrates all these operational facets. By bringing organization setup, asset lifecycle management, resource booking, and auditing under one roof, we empower administrators and employees to maintain a single source of truth for all physical and operational assets.
+
+## 🚀 Advantages of Using Assest Flow
+
+- **End-to-End Asset Lifecycle Tracking:** From procurement to allocation, transfer, and eventual retirement, every asset is tracked seamlessly.
+- **QR Code Integration:** Built-in QR scanning allows ground staff to instantly verify, audit, or update asset statuses using their mobile devices.
+- **Proactive Maintenance:** Schedule and track maintenance tasks to minimize equipment downtime and extend asset lifespans.
+- **Conflict-Free Resource Booking:** A streamlined booking system ensures shared resources (like conference rooms or specialized equipment) are utilized efficiently without overlapping reservations.
+- **Compliance & Accountability:** Detailed audit logs automatically record who did what and when, ensuring strict compliance and security.
+- **Customizable Organization Hierarchy:** Flexibly model your real-world organizational structure (departments, locations, employees) directly in the system.
+
+## ⚙️ Tech Stack
+
+This project is built using a modern, robust, and scalable technology stack:
+
+### Frontend
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Library:** [React 19](https://react.dev/)
+- **Styling:**  [Sass](https://sass-lang.com/) for granular component styling.
+- **UI Components & Utilities:** `react-toastify` for notifications, `html5-qrcode` for native barcode and QR code scanning.
+
+### Backend & Database
+- **API Engine:** Next.js Route Handlers (Serverless APIs)
+- **Database:** [PostgreSQL](https://www.postgresql.org/) (interfaced natively via `pg` node-postgres).
+- **Authentication & Security:** Custom JWT (`jsonwebtoken`) based authentication, password hashing with `bcryptjs`, and robust 2FA support.
+- **Communication:** Email services powered by `nodemailer`.
+
+## 🛠️ Key Functionalities
+
+1. **Dashboard & Analytics:** Real-time metrics on asset statuses, upcoming maintenance, and recent allocations.
+2. **Organization Setup:** Manage physical locations, departments, asset categories, and employee directories.
+3. **Asset Management & Tracking:** Register new assets, generate QR codes, and monitor their condition.
+4. **Allocation & Transfers:** Assign assets to specific employees or departments, and track intra-organizational transfers.
+5. **Resource Booking:** Calendar-based or list-based booking system for shared organizational resources.
+6. **Maintenance & Servicing:** Log repair requests, track maintenance costs, and manage service vendors.
+7. **Audit & Compliance:** Conduct periodic physical audits and maintain immutable activity logs for security.
+8. **Reporting Engine:** Generate and export comprehensive PDF/CSV reports on asset depreciation, usage, and maintenance costs.
+9. **Authentication & Authorization:** Secure login (including Forgot/Reset Password flows), session management, and role-based access control.
+
+## 🏁 Getting Started
+
+First, ensure your PostgreSQL database is running and the `.env` variables are configured appropriately. 
+
+Install the dependencies:
+
+```bash
+npm install
+```
+
+Initialize the database schema and seed data (if required):
+
+```bash
+node scripts/init-db.js
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> aditya
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application in action.

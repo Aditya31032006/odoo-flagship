@@ -1,8 +1,8 @@
 import './global.scss'
 
 export const metadata = {
-  title: "Auth Template",
-  description:"A clean Next.js authentication template.",
+  title: "Assest Flow",
+  description:"Assest Flow is a comprehensive, centralized platform designed to modernize and streamline how organizations manage their assets, resources, departments, and maintenance schedules.",
 };
 
 export default function RootLayout({
