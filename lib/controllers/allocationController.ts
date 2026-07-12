@@ -15,7 +15,12 @@ export const allocationController = {
       const dropdowns = searchParams.get("dropdowns") === "true";
       if (dropdowns) {
         const [assetsRes, employeesRes, departmentsRes] = await Promise.all([
-          query("SELECT id, name, asset_tag, current_status FROM assets ORDER BY asset_tag ASC"),
+          query(
+            `SELECT id, name, asset_tag, current_status 
+             FROM assets 
+             WHERE current_status NOT IN ('LOST', 'UNDER_MAINTENANCE', 'RETIRED', 'DISPOSED')
+             ORDER BY asset_tag ASC`
+          ),
           query("SELECT id, full_name FROM users WHERE status = 'ACTIVE' ORDER BY full_name ASC"),
           query("SELECT id, name FROM departments WHERE status = 'ACTIVE' ORDER BY name ASC")
         ]);

@@ -94,7 +94,7 @@ export const auditQueries = {
         start_date, end_date, status, created_by, total_assets, verified_assets, missing_assets,
         damaged_assets, pending_assets
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE', $10, 0, 0, 0, 0, 0
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, 'IN_PROGRESS', $10, 0, 0, 0, 0, 0
       ) RETURNING id`,
       [
         auditNumber,

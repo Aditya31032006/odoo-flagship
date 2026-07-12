@@ -5,42 +5,250 @@ $bg-page:        #070d19;
 $bg-card:        #0b1222;
 $border-color:   #162238;
 $accent-green:   #48e5a0;
+$accent-red:     #ef4444;
+$accent-yellow:  #fbbf24;
 $text-title:     #ffffff;
 $text-body:      #94a3b8;
 $text-muted:     #64748b;
 
+// ── Main Content Container ──
 .audit-content {
-  padding: 32px;
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  height: 100%;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: $bg-page; }
+  &::-webkit-scrollbar-thumb {
+    background: $border-color;
+    border-radius: 3px;
+    &:hover { background: $accent-green; }
+  }
 }
 
-// ── Cycle Header Card ──
+// ── Page Header Row ──
+.audit-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+
+  .page-title {
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $text-title;
+      margin: 0;
+    }
+    p {
+      font-size: 0.85rem;
+      color: $text-muted;
+      margin: 4px 0 0;
+    }
+  }
+}
+
+// ── Cycle Selector Card ──
+.cycle-selector-card {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 10px;
+  padding: 20px 24px;
+
+  label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: $text-muted;
+    margin-bottom: 10px;
+  }
+}
+
+// ── Cycle Summary Card ──
 .cycle-summary-card {
-  background-color: rgba(72, 229, 160, 0.02);
+  background: linear-gradient(135deg, rgba(72, 229, 160, 0.04) 0%, rgba(11, 18, 34, 0) 100%);
   border: 1px solid rgba(72, 229, 160, 0.2);
   border-radius: 10px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  padding: 20px 24px;
+
+  .cycle-summary-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
 
   h3 {
     font-size: 1.1rem;
-    font-weight: 600;
-    color: #ffffff;
+    font-weight: 700;
+    color: $text-title;
+    margin: 0 0 6px;
   }
 
-  p {
+  .cycle-meta {
     font-size: 0.85rem;
     color: $text-body;
+    margin: 0 0 4px;
+
+    strong { color: $text-title; }
   }
 
   .meta-auditors {
     font-size: 0.8rem;
     color: $accent-green;
     font-weight: 500;
+    margin-top: 4px;
+  }
+}
+
+// ── Cycle Status Badge ──
+.cycle-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &.status-in-progress {
+    background-color: rgba(72, 229, 160, 0.1);
+    border: 1px solid rgba(72, 229, 160, 0.3);
+    color: $accent-green;
+  }
+
+  &.status-closed {
+    background-color: rgba(100, 116, 139, 0.1);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    color: $text-muted;
+  }
+
+  &.status-scheduled {
+    background-color: rgba(0, 176, 255, 0.1);
+    border: 1px solid rgba(0, 176, 255, 0.3);
+    color: #00b0ff;
+  }
+
+  &.status-draft {
+    background-color: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    color: $accent-yellow;
+  }
+}
+
+// ── Progress Bar ──
+.audit-progress {
+  margin-top: 14px;
+
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: $text-muted;
+    margin-bottom: 6px;
+
+    .progress-count {
+      font-weight: 600;
+      color: $text-body;
+    }
+  }
+
+  .progress-bar-track {
+    height: 6px;
+    background-color: rgba(22, 34, 56, 0.8);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #48e5a0, #00b0ff);
+      transition: width 0.4s ease;
+    }
+  }
+
+  .progress-pills {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+
+    .pill-stat {
+      font-size: 0.75rem;
+      color: $text-muted;
+
+      &.stat-verified { color: #4ade80; }
+      &.stat-missing  { color: $accent-red; }
+      &.stat-damaged  { color: $accent-yellow; }
+      &.stat-pending  { color: $text-muted; }
+
+      .pill-num {
+        font-weight: 700;
+        margin-right: 3px;
+      }
+    }
+  }
+}
+
+// ── Filter Tabs ──
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 0;
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: $text-muted;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: -1px;
+    box-shadow: none !important;
+
+    .tab-count {
+      background-color: rgba(100, 116, 139, 0.15);
+      border-radius: 10px;
+      padding: 2px 7px;
+      font-size: 0.7rem;
+    }
+
+    &:hover {
+      color: $text-title;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    &.active {
+      color: $accent-green;
+      border-bottom-color: $accent-green;
+      background: transparent !important;
+      box-shadow: none !important;
+
+      .tab-count {
+        background-color: rgba(72, 229, 160, 0.1);
+        color: $accent-green;
+      }
+    }
   }
 }
 
@@ -51,71 +259,187 @@ $text-muted:     #64748b;
   flex-wrap: wrap;
 
   .verify-pill-btn {
-    border: 1px solid $border-color;
-    background-color: #090f1d;
+    border: 1.5px solid $border-color;
+    background-color: transparent;
     color: $text-muted;
     border-radius: 20px;
-    padding: 6px 14px;
+    padding: 6px 16px;
     font-size: 0.75rem;
     cursor: pointer;
     font-weight: 600;
     transition: all 0.2s ease;
+    outline: none;
+    box-shadow: none !important;
 
     &:hover {
-      color: #ffffff;
+      color: $text-title;
       border-color: $text-body;
     }
 
     &.status-verified {
-      background-color: rgba(74, 222, 128, 0.1);
-      border-color: rgba(74, 222, 128, 0.4);
-      color: #4ade80;
-
+      &:hover { border-color: #4ade80; color: #4ade80; }
       &.active {
-        background-color: #22c55e;
+        background-color: rgba(34, 197, 94, 0.15);
         border-color: #22c55e;
-        color: #070d19;
-        box-shadow: 0 0 10px rgba(34, 197, 148, 0.4);
+        color: #4ade80;
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.25) !important;
       }
     }
 
     &.status-missing {
-      background-color: rgba(248, 113, 113, 0.1);
-      border-color: rgba(248, 113, 113, 0.4);
-      color: #f87171;
-
+      &:hover { border-color: $accent-red; color: $accent-red; }
       &.active {
-        background-color: #ef4444;
-        border-color: #ef4444;
-        color: #ffffff;
-        box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        background-color: rgba(239, 68, 68, 0.15);
+        border-color: $accent-red;
+        color: #fca5a5;
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.25) !important;
       }
     }
 
     &.status-damaged {
-      background-color: rgba(251, 191, 36, 0.1);
-      border-color: rgba(251, 191, 36, 0.4);
-      color: #fbbf24;
-
+      &:hover { border-color: $accent-yellow; color: $accent-yellow; }
       &.active {
-        background-color: #f59e0b;
-        border-color: #f59e0b;
-        color: #070d19;
-        box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        background-color: rgba(251, 191, 36, 0.15);
+        border-color: $accent-yellow;
+        color: #fde68a;
+        box-shadow: 0 0 12px rgba(251, 191, 36, 0.25) !important;
       }
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
   }
 }
 
-// ── Discrepancy Banner Card ──
+// ── Notes Input in Table ──
+.notes-input {
+  width: 100%;
+  background: rgba(9, 15, 29, 0.7);
+  border: 1.5px solid $border-color;
+  border-radius: 6px;
+  color: $text-title;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+
+  &::placeholder { color: $text-muted; }
+
+  &:focus { border-color: rgba(72, 229, 160, 0.4); }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ── Data Table Card ──
+.table-card {
+  background-color: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .table-responsive {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 460px;
+
+    &::-webkit-scrollbar { width: 6px; height: 6px; }
+    &::-webkit-scrollbar-track { background: $bg-page; }
+    &::-webkit-scrollbar-thumb {
+      background: $border-color;
+      border-radius: 3px;
+      &:hover { background: $accent-green; }
+    }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background-color: #090f1d;
+      color: $text-muted;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 14px 16px;
+      border-bottom: 1px solid $border-color;
+      font-size: 0.7rem;
+    }
+
+    td {
+      padding: 14px 16px;
+      color: $text-body;
+      border-bottom: 1px solid $border-color;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr {
+      transition: background-color 0.15s ease;
+      &:hover td { background-color: rgba(22, 34, 56, 0.4); }
+    }
+
+    // Status-colored rows
+    tr.row-verified { td { background-color: rgba(34, 197, 94, 0.03); } }
+    tr.row-missing  { td { background-color: rgba(239, 68, 68, 0.04); } }
+    tr.row-damaged  { td { background-color: rgba(251, 191, 36, 0.03); } }
+
+    .row-title {
+      font-weight: 500;
+      color: $text-title;
+    }
+
+    .asset-tag-badge {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      color: $accent-green;
+      background: rgba(72, 229, 160, 0.06);
+      border: 1px solid rgba(72, 229, 160, 0.12);
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-right: 10px;
+    }
+  }
+}
+
+// ── Cell-level select dropdown ──
+.cell-select {
+  background-color: #090f1d;
+  border: 1.5px solid $border-color;
+  border-radius: 6px;
+  color: $text-title;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+
+  &:focus { border-color: rgba(72, 229, 160, 0.4); }
+
+  option { background: #0b1222; }
+}
+
+// ── Discrepancy Alert Banner ──
 .discrepancy-banner {
-  background-color: rgba(245, 158, 11, 0.08);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.03));
   border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 8px;
-  padding: 16px;
-  margin-top: 16px;
-  color: #fbbf24;
-  font-size: 0.9rem;
+  padding: 14px 18px;
+  color: $accent-yellow;
+  font-size: 0.88rem;
   font-weight: 500;
   display: flex;
   justify-content: space-between;
@@ -129,13 +453,127 @@ $text-muted:     #64748b;
   }
 }
 
+// ── Discrepancy Resolution Section ──
+.discrepancy-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: $text-title;
+  margin-bottom: 12px;
+
+  .open-count {
+    font-size: 0.75rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: $accent-red;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-weight: 700;
+  }
+
+  .closed-badge {
+    font-size: 0.75rem;
+    background: rgba(100, 116, 139, 0.1);
+    color: $text-muted;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-weight: 700;
+  }
+}
+
+.resolution-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  &.resolved {
+    background-color: rgba(72, 229, 160, 0.1);
+    border: 1px solid rgba(72, 229, 160, 0.2);
+    color: $accent-green;
+  }
+
+  &.unresolved {
+    background-color: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: $accent-red;
+  }
+}
+
+// ── Type Badge ──
+.type-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  &.missing {
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: $accent-red;
+  }
+
+  &.damaged {
+    background-color: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    color: $accent-yellow;
+  }
+
+  &.not-accessible {
+    background-color: rgba(100, 116, 139, 0.1);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    color: $text-muted;
+  }
+}
+
+// ── Closed cycle read-only banner ──
+.closed-audit-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(100, 116, 139, 0.06);
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 0.85rem;
+  color: $text-muted;
+
+  svg { flex-shrink: 0; }
+
+  strong { color: $text-body; }
+}
+
+// ── Empty State ──
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+
+  svg { opacity: 0.2; margin-bottom: 12px; }
+
+  h4 {
+    font-size: 1rem;
+    color: $text-body;
+    margin: 0 0 6px;
+  }
+
+  p {
+    font-size: 0.82rem;
+    color: $text-muted;
+    margin: 0;
+  }
+}
+
 @keyframes bannerFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

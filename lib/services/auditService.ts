@@ -117,6 +117,7 @@ export const auditService = {
 
   /**
    * Performs verify item check (registers discrepancies for damaged or missing assets)
+   * and IMMEDIATELY syncs the asset's current_status in the asset directory.
    */
   async verifyItem(
     data: {
@@ -131,20 +132,38 @@ export const auditService = {
     await defaultQuery("BEGIN");
 
     try {
-      // 1. Fetch item details
+      // 1. Fetch item details (including the asset_id and cycle id)
       const itemRes = await defaultQuery("SELECT * FROM audit_items WHERE id = $1", [itemIdNum]);
       if (itemRes.rows.length === 0) throw new Error("Checklist item not found.");
       const item = itemRes.rows[0];
 
-      // 2. Update item verification
+      // 2. Update audit_items verification record
       await auditQueries.verifyItem(itemIdNum, data.status, data.notes || "", verifiedByUserId);
 
-      // 3. Manage discrepancies triggers
+      // 3. Manage discrepancy log
       if (data.status === "VERIFIED") {
+        // Clear any existing discrepancy for this item
         await auditQueries.removeDiscrepancy(itemIdNum);
+
+        // Revert asset to AVAILABLE (only if not already ALLOCATED to someone)
+        const assetCheck = await defaultQuery(
+          `SELECT current_status FROM assets WHERE id = $1`,
+          [item.asset_id]
+        );
+        const currentStatus = assetCheck.rows[0]?.current_status;
+        // Only restore to AVAILABLE if it was previously locked by audit (LOST or UNDER_MAINTENANCE)
+        // but NOT if it is already ALLOCATED (someone may have checked it out)
+        if (currentStatus === "LOST" || currentStatus === "UNDER_MAINTENANCE") {
+          await auditQueries.updateAssetStatus(item.asset_id, "AVAILABLE");
+          await defaultQuery(
+            `INSERT INTO asset_status_history (asset_id, previous_status, new_status, reason, changed_by)
+             VALUES ($1, $2, 'AVAILABLE', $3, $4)`,
+            [item.asset_id, currentStatus, "Asset re-verified as OK in audit — status restored", verifiedByUserId]
+          );
+        }
       } else {
-        // Build description based on status
-        const typeStr = data.status; // MISSING, DAMAGED, NOT_ACCESSIBLE
+        // MISSING, DAMAGED, NOT_ACCESSIBLE → flag asset in directory immediately
+        const typeStr = data.status;
         const description = data.notes || `Asset reported as ${data.status.toLowerCase()} during audit cycle.`;
 
         await auditQueries.createDiscrepancy(
@@ -155,9 +174,40 @@ export const auditService = {
           description,
           verifiedByUserId
         );
+
+        // ── IMMEDIATE ASSET STATUS LOCK ──────────────────────────────
+        // Fetch current asset status before overwriting
+        const assetBefore = await defaultQuery(
+          `SELECT current_status FROM assets WHERE id = $1`,
+          [item.asset_id]
+        );
+        const prevStatus = assetBefore.rows[0]?.current_status || "AVAILABLE";
+
+        let newAssetStatus: string;
+        if (data.status === "MISSING" || data.status === "NOT_ACCESSIBLE") {
+          newAssetStatus = "LOST";
+        } else {
+          // DAMAGED
+          newAssetStatus = "UNDER_MAINTENANCE";
+        }
+
+        await auditQueries.updateAssetStatus(item.asset_id, newAssetStatus);
+
+        // Log the status change in asset history
+        await defaultQuery(
+          `INSERT INTO asset_status_history (asset_id, previous_status, new_status, reason, changed_by)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            item.asset_id,
+            prevStatus,
+            newAssetStatus,
+            `Asset flagged as ${data.status} during audit (${data.notes || "no notes"})`,
+            verifiedByUserId
+          ]
+        );
       }
 
-      // 4. Recalculate metrics
+      // 4. Recalculate cycle metrics
       await auditQueries.recalculateCycleMetrics(item.audit_cycle_id);
 
       await defaultQuery("COMMIT");
@@ -207,9 +257,9 @@ export const auditService = {
 
       for (const disc of discrepanciesRes.rows) {
         // Sync directory statuses
-        if (disc.resolution === "MARK_AS_LOST" || disc.discrepancy_type === "MISSING") {
+        if (disc.resolution === "MARKED_LOST" || disc.discrepancy_type === "MISSING") {
           await auditQueries.updateAssetStatus(disc.asset_id, "LOST");
-        } else if (disc.resolution === "SEND_TO_MAINTENANCE" || disc.discrepancy_type === "DAMAGED") {
+        } else if (disc.resolution === "SENT_TO_MAINTENANCE" || disc.discrepancy_type === "DAMAGED") {
           await auditQueries.updateAssetStatus(disc.asset_id, "UNDER_MAINTENANCE");
         }
       }

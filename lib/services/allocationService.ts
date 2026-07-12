@@ -43,6 +43,26 @@ export const allocationService = {
     await defaultQuery("BEGIN");
 
     try {
+      // 0. Guard: Asset must be in an allocatable state
+      const assetStatusRes = await defaultQuery(
+        `SELECT name, asset_tag, current_status FROM assets WHERE id = $1`,
+        [assetIdNum]
+      );
+      if (assetStatusRes.rows.length === 0) throw new Error("Asset not found.");
+      const asset = assetStatusRes.rows[0];
+      const nonAllocatableStatuses = ["LOST", "UNDER_MAINTENANCE", "RETIRED", "DISPOSED"];
+      if (nonAllocatableStatuses.includes(asset.current_status)) {
+        const reasonMap: Record<string, string> = {
+          LOST: "flagged as MISSING in an audit and is locked",
+          UNDER_MAINTENANCE: "flagged as DAMAGED and is currently under maintenance",
+          RETIRED: "retired from service",
+          DISPOSED: "disposed"
+        };
+        throw new Error(
+          `Cannot allocate "${asset.name}" (${asset.asset_tag}): Asset is ${reasonMap[asset.current_status] || asset.current_status}.`
+        );
+      }
+
       // 1. Verify not already allocated
       const activeCheck = await allocationQueries.getActiveAllocationForAsset(assetIdNum);
       if (activeCheck.rows.length > 0) {
