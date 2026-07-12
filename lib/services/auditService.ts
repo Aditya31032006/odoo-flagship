@@ -1,4 +1,5 @@
 import { auditQueries } from "../queries/auditQueries";
+import { notificationQueries } from "../queries/notificationQueries";
 import { query as defaultQuery } from "../db";
 
 export const auditService = {
@@ -155,6 +156,19 @@ export const auditService = {
           description,
           verifiedByUserId
         );
+
+        // Notify Admins and Asset Managers
+        const adminsRes = await defaultQuery("SELECT id FROM users WHERE role IN ('ADMIN', 'ASSET_MANAGER')");
+        for (const admin of adminsRes.rows) {
+          await notificationQueries.insertNotification(
+            admin.id,
+            "AUDIT_DISCREPANCY",
+            "HIGH",
+            "Audit Discrepancy Flagged",
+            `Discrepancy flagged for asset ID ${item.asset_id}: ${description}`,
+            item.asset_id
+          );
+        }
       }
 
       // 4. Recalculate metrics

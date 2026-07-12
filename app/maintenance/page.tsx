@@ -46,6 +46,14 @@ interface MaintenanceRequest {
 export default function Maintenance() {
   const router = useRouter();
 
+  // Auto-open Raise Request modal if navigated from dashboard shortcut
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") === "raise") {
+      setShowRaiseModal(true);
+    }
+  }, []);
+
   // Auth States
   const [currentUser, setCurrentUser] = useState<{ fullName: string; role: string } | null>(null);
 
@@ -64,6 +72,15 @@ export default function Maintenance() {
     priority: "MEDIUM",
     requestedServiceDate: ""
   });
+  const [issuePhoto, setIssuePhoto] = useState<string | null>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setIssuePhoto(reader.result as string);
+    reader.readAsDataURL(file);
+  };
 
   // Details & Action Modal
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -160,7 +177,7 @@ export default function Maintenance() {
       const res = await fetch("/api/maintenance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(raiseForm)
+        body: JSON.stringify({ ...raiseForm, issuePhoto })
       });
 
       if (!res.ok) {
@@ -177,6 +194,7 @@ export default function Maintenance() {
         priority: "MEDIUM",
         requestedServiceDate: ""
       });
+      setIssuePhoto(null);
       fetchRequestsList();
     } catch (err: any) {
       toast.error(err.message);
@@ -601,9 +619,74 @@ export default function Maintenance() {
                   </div>
                 </div>
 
+                {/* Photo Upload */}
+                <div className="form-group">
+                  <label>Attach Photo <span style={{ color: "#64748b", fontWeight: 400 }}>(optional)</span></label>
+                  <label
+                    htmlFor="issue-photo-input"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                      border: "1px dashed #2d4263",
+                      borderRadius: "8px",
+                      padding: "12px 16px",
+                      background: "#090f1d",
+                      color: "#64748b",
+                      fontSize: "0.85rem",
+                      transition: "border-color 0.2s"
+                    }}
+                  >
+                    <span style={{ fontSize: "1.4rem" }}>📷</span>
+                    <span>{issuePhoto ? "Photo attached — click to change" : "Click to upload a photo of the issue"}</span>
+                  </label>
+                  <input
+                    id="issue-photo-input"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handlePhotoChange}
+                  />
+                  {issuePhoto && (
+                    <div style={{ marginTop: "10px", position: "relative", display: "inline-block" }}>
+                      <img
+                        src={issuePhoto}
+                        alt="Issue preview"
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "160px",
+                          borderRadius: "8px",
+                          border: "1px solid #2d4263",
+                          objectFit: "cover",
+                          display: "block"
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIssuePhoto(null)}
+                        style={{
+                          position: "absolute",
+                          top: "6px",
+                          right: "6px",
+                          background: "rgba(0,0,0,0.7)",
+                          border: "none",
+                          borderRadius: "50%",
+                          color: "#ef4444",
+                          width: "24px",
+                          height: "24px",
+                          cursor: "pointer",
+                          fontSize: "0.85rem",
+                          lineHeight: 1
+                        }}
+                      >×</button>
+                    </div>
+                  )}
+                </div>
+
               </div>
               <footer className="modal-footer">
-                <button type="button" className="cancel-btn" onClick={() => setShowRaiseModal(false)}>Cancel</button>
+                <button type="button" className="cancel-btn" onClick={() => { setShowRaiseModal(false); setIssuePhoto(null); }}>Cancel</button>
                 <button type="submit" className="submit-btn">Raise Request</button>
               </footer>
             </form>

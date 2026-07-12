@@ -1,4 +1,5 @@
 import { bookingQueries } from "../queries/bookingQueries";
+import { notificationQueries } from "../queries/notificationQueries";
 import { query as defaultQuery } from "../db";
 
 export const bookingService = {
@@ -92,6 +93,18 @@ export const bookingService = {
         [bookedByUserId, assetIdNum, `Resource reserved: ${data.title}`]
       );
 
+      // 5. Notification
+      if (empId) {
+        await notificationQueries.insertNotification(
+          empId,
+          "BOOKING_CONFIRMED",
+          "NORMAL",
+          "Booking Confirmed",
+          `Your booking for ${asset.name} has been confirmed.`,
+          assetIdNum
+        );
+      }
+
       await defaultQuery("COMMIT");
       return { success: true, id: createRes.rows[0].id };
     } catch (error) {
@@ -107,7 +120,7 @@ export const bookingService = {
     await defaultQuery("BEGIN");
     try {
       const bookingRes = await defaultQuery(
-        "SELECT asset_id, status FROM resource_bookings WHERE id = $1",
+        "SELECT asset_id, status, booked_by, title FROM resource_bookings WHERE id = $1",
         [bookingId]
       );
       if (bookingRes.rows.length === 0) {
@@ -125,6 +138,16 @@ export const bookingService = {
         `INSERT INTO activity_logs (actor_user_id, action, entity_type, entity_id, description)
          VALUES ($1, 'CANCEL', 'ASSET', $2, $3)`,
         [cancelledByUserId, booking.asset_id, `Reservation cancelled: ${reason}`]
+      );
+
+      // Notification
+      await notificationQueries.insertNotification(
+        booking.booked_by,
+        "BOOKING_CANCELLED",
+        "NORMAL",
+        "Booking Cancelled",
+        `Your booking "${booking.title}" has been cancelled.`,
+        booking.asset_id
       );
 
       await defaultQuery("COMMIT");

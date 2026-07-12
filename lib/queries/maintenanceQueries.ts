@@ -47,15 +47,16 @@ export const maintenanceQueries = {
     issueDescription: string,
     priority: string,
     requestedServiceDate: string | null,
+    issuePhoto: string | null = null,
     executor: any = defaultQuery
   ) {
     return runQuery(
       executor,
       `INSERT INTO maintenance_requests (
         request_number, asset_id, raised_by, issue_title, issue_description, priority, 
-        status, requested_service_date, raised_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, CURRENT_TIMESTAMP) RETURNING id`,
-      [requestNumber, assetId, raisedBy, issueTitle, issueDescription, priority, requestedServiceDate]
+        status, requested_service_date, issue_photo, raised_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, $8, CURRENT_TIMESTAMP) RETURNING id`,
+      [requestNumber, assetId, raisedBy, issueTitle, issueDescription, priority, requestedServiceDate, issuePhoto]
     );
   },
 

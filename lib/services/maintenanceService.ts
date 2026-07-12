@@ -1,4 +1,5 @@
 import { maintenanceQueries } from "../queries/maintenanceQueries";
+import { notificationQueries } from "../queries/notificationQueries";
 import { query as defaultQuery } from "../db";
 
 export const maintenanceService = {
@@ -20,6 +21,7 @@ export const maintenanceService = {
       issueDescription: string;
       priority: string;
       requestedServiceDate: string;
+      issuePhoto?: string | null;
     },
     raisedByUserId: number
   ) {
@@ -33,7 +35,7 @@ export const maintenanceService = {
       const nextSeq = parseInt(seqRes.rows[0].next_val, 10);
       const requestNumber = `MR-${String(nextSeq).padStart(4, "0")}`;
 
-      // 2. Insert maintenance request
+      // 2. Insert maintenance request (with optional photo)
       const requestRes = await maintenanceQueries.createRequest(
         requestNumber,
         assetIdNum,
@@ -41,7 +43,8 @@ export const maintenanceService = {
         data.issueTitle,
         data.issueDescription,
         data.priority || "MEDIUM",
-        data.requestedServiceDate || null
+        data.requestedServiceDate || null,
+        data.issuePhoto || null
       );
 
       // 3. Create activity log
@@ -66,7 +69,7 @@ export const maintenanceService = {
     await defaultQuery("BEGIN");
     try {
       const requestRes = await defaultQuery(
-        "SELECT asset_id, status FROM maintenance_requests WHERE id = $1",
+        "SELECT asset_id, status, raised_by FROM maintenance_requests WHERE id = $1",
         [id]
       );
       if (requestRes.rows.length === 0) throw new Error("Request not found");
@@ -98,6 +101,16 @@ export const maintenanceService = {
         [approvedByUserId, req.asset_id, `Maintenance request approved`]
       );
 
+      // Create notification for the user who raised it
+      await notificationQueries.insertNotification(
+        req.raised_by,
+        "MAINTENANCE_APPROVED",
+        "NORMAL",
+        "Maintenance Approved",
+        `Your maintenance request has been approved.`,
+        req.asset_id
+      );
+
       await defaultQuery("COMMIT");
       return { success: true };
     } catch (error) {
@@ -112,7 +125,7 @@ export const maintenanceService = {
   async rejectRequest(id: number, rejectedByUserId: number, reason: string) {
     await defaultQuery("BEGIN");
     try {
-      const requestRes = await defaultQuery("SELECT asset_id, status FROM maintenance_requests WHERE id = $1", [id]);
+      const requestRes = await defaultQuery("SELECT asset_id, status, raised_by FROM maintenance_requests WHERE id = $1", [id]);
       if (requestRes.rows.length === 0) throw new Error("Request not found");
       const req = requestRes.rows[0];
 
@@ -121,6 +134,16 @@ export const maintenanceService = {
       }
 
       await maintenanceQueries.rejectRequest(id, rejectedByUserId, reason);
+
+      // Create notification for the user who raised it
+      await notificationQueries.insertNotification(
+        req.raised_by,
+        "MAINTENANCE_REJECTED",
+        "NORMAL",
+        "Maintenance Rejected",
+        `Your maintenance request has been rejected. Reason: ${reason}`,
+        req.asset_id
+      );
 
       await defaultQuery("COMMIT");
       return { success: true };

@@ -1,4 +1,5 @@
 import { allocationQueries } from "../queries/allocationQueries";
+import { notificationQueries } from "../queries/notificationQueries";
 import { query as defaultQuery } from "../db";
 
 export const allocationService = {
@@ -79,6 +80,18 @@ export const allocationService = {
          VALUES ($1, 'ALLOCATE', 'ASSET', $2, $3)`,
         [allocatedByUserId, assetIdNum, `Asset allocated to ${empIdNum ? "employee" : "department"}`]
       );
+
+      // 6. Add notification
+      if (empIdNum) {
+        await notificationQueries.insertNotification(
+          empIdNum,
+          "ASSET_ASSIGNED",
+          "HIGH",
+          "Asset Assigned",
+          `You have been assigned a new asset.`,
+          assetIdNum
+        );
+      }
 
       await defaultQuery("COMMIT");
       return { success: true };

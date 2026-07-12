@@ -5,12 +5,13 @@ export const reportService = {
    * Fetches unified metrics for Dashboard Charts and Alerts Panel
    */
   async getUnifiedReportData() {
-    const [deptAlloc, maintFreq, mostUsed, idleList, alerts] = await Promise.all([
+    const [deptAlloc, maintFreq, mostUsed, idleList, alerts, heatmap] = await Promise.all([
       reportQueries.getDepartmentAllocations(),
       reportQueries.getMaintenanceAnalysis(),
       reportQueries.getMostUsedAssets(),
       reportQueries.getIdleAssets(),
-      reportQueries.getMaintenanceAndRetirementAlerts()
+      reportQueries.getMaintenanceAndRetirementAlerts(),
+      reportQueries.getBookingHeatmap()
     ]);
 
     return {
@@ -18,7 +19,8 @@ export const reportService = {
       maintenanceAnalysis: maintFreq.rows,
       mostUsedAssets: mostUsed.rows,
       idleAssets: idleList.rows,
-      alerts: alerts.rows
+      alerts: alerts.rows,
+      bookingHeatmap: heatmap.rows
     };
   },
 
@@ -36,6 +38,8 @@ export const reportService = {
       payload = data.idleAssets;
     } else if (reportType === "MAINTENANCE") {
       payload = data.maintenanceAnalysis;
+    } else if (reportType === "HEATMAP") {
+      payload = data.bookingHeatmap;
     } else {
       payload = data.alerts;
     }

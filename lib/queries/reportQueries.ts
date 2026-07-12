@@ -75,6 +75,16 @@ export const reportQueries = {
   },
 
   /**
+   * Fetches resource booking heatmap (peak usage windows)
+   */
+  async getBookingHeatmap(executor: any = defaultQuery) {
+    return runQuery(
+      executor,
+      `SELECT * FROM resource_booking_heatmap ORDER BY day_of_week ASC, start_hour ASC`
+    );
+  },
+
+  /**
    * Logs report export audits
    */
   async createExportLog(

@@ -321,21 +321,21 @@ export default function Dashboard() {
                 <h3 className="panel-title" style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", marginBottom: "12px" }}>Quick Shortcuts</h3>
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   {(user.role === "ADMIN" || user.role === "ASSET_MANAGER") && (
-                    <button 
-                      onClick={() => toast.success("Opening Register Asset form (Assets table integration)...")} 
+                    <button
+                      onClick={() => router.push("/assets?action=register")}
                       style={{ background: "#48e5a0", color: "#070d19", border: "none", borderRadius: "6px", padding: "10px 16px", fontSize: "0.85rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
                     >
                       <span>+</span> Register Asset
                     </button>
                   )}
-                  <button 
-                    onClick={() => toast.success("Navigating to Resource Booking page...")}
+                  <button
+                    onClick={() => router.push("/resource-booking")}
                     style={{ background: "transparent", border: "1px solid #162238", color: "#ffffff", borderRadius: "6px", padding: "10px 16px", fontSize: "0.85rem", fontWeight: "500", cursor: "pointer" }}
                   >
                     📅 Book Resource
                   </button>
-                  <button 
-                    onClick={() => toast.success("Opening Raise Maintenance request dialog...")}
+                  <button
+                    onClick={() => router.push("/maintenance?action=raise")}
                     style={{ background: "transparent", border: "1px solid #162238", color: "#ffffff", borderRadius: "6px", padding: "10px 16px", fontSize: "0.85rem", fontWeight: "500", cursor: "pointer" }}
                   >
                     🔧 Raise Maintenance Request

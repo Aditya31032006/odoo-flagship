@@ -65,6 +65,14 @@ interface AssetDetails {
 export default function Assets() {
   const router = useRouter();
 
+  // Auto-open Register modal if navigated from dashboard shortcut
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") === "register") {
+      setShowRegModal(true);
+    }
+  }, []);
+
   // Auth States
   const [currentUser, setCurrentUser] = useState<{ fullName: string; role: string } | null>(null);
 

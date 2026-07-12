@@ -56,6 +56,16 @@ interface MaintenanceAlert {
   retirement_days_remaining: number | null;
 }
 
+interface BookingHeatmap {
+  asset_id: string;
+  asset_tag: string;
+  resource_name: string;
+  day_of_week: number;
+  day_name: string;
+  start_hour: number;
+  booking_count: number;
+}
+
 export default function Reports() {
   const router = useRouter();
 
@@ -68,10 +78,11 @@ export default function Reports() {
   const [mostUsedAssets, setMostUsedAssets] = useState<AssetUtilization[]>([]);
   const [idleAssets, setIdleAssets] = useState<IdleAsset[]>([]);
   const [alerts, setAlerts] = useState<MaintenanceAlert[]>([]);
+  const [heatmapData, setHeatmapData] = useState<BookingHeatmap[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Export State
-  const [exportType, setExportType] = useState<"UTILIZATION" | "IDLE" | "MAINTENANCE" | "ALERTS">("UTILIZATION");
+  const [exportType, setExportType] = useState<"UTILIZATION" | "IDLE" | "MAINTENANCE" | "ALERTS" | "HEATMAP">("UTILIZATION");
   const [exportFormat, setExportFormat] = useState<"CSV" | "JSON">("CSV");
   const [exporting, setExporting] = useState(false);
 
@@ -115,6 +126,7 @@ export default function Reports() {
       setMostUsedAssets(data.mostUsedAssets || []);
       setIdleAssets(data.idleAssets || []);
       setAlerts(data.alerts || []);
+      setHeatmapData(data.bookingHeatmap || []);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -308,53 +320,71 @@ export default function Reports() {
                 {/* Column A: Utilization Bar Chart */}
                 <div className="chart-card">
                   <span className="chart-title">Utilization by department</span>
-                  <div className="bar-chart-container" style={{ display: "flex", gap: "10px", paddingBottom: "30px", paddingLeft: "10px", paddingRight: "10px" }}>
-                    {departmentUtilization.length === 0 ? (
-                      <span style={{ color: "#64748b", fontSize: "0.8rem", margin: "auto" }}>No data found</span>
-                    ) : (
-                      departmentUtilization.map(d => {
-                        const pct = Math.max(Math.min((d.active_allocations / maxAllocation) * 100, 100), 10);
-                        return (
-                          <div className="bar-column" key={d.department_id} style={{ position: "relative" }}>
-                            <div
-                              className="bar-fill"
-                              style={{ height: `${pct}%` }}
-                              data-value={d.active_allocations}
-                            />
-                            <span className="bar-label">{d.department_name}</span>
-                          </div>
-                        );
-                      })
-                    )}
+                  <div className="chart-layout">
+                    <div className="y-axis">
+                      <span>{maxAllocation}</span>
+                      <span>{Math.round(maxAllocation / 2)}</span>
+                      <span>0</span>
+                    </div>
+                    <div className="bar-chart-container" style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                      {departmentUtilization.length === 0 ? (
+                        <span style={{ color: "#64748b", fontSize: "0.8rem", margin: "auto" }}>No data found</span>
+                      ) : (
+                        departmentUtilization.map(d => {
+                          const pct = Math.max(Math.min((d.active_allocations / maxAllocation) * 100, 100), 10);
+                          return (
+                            <div className="bar-column" key={d.department_id} style={{ position: "relative" }}>
+                              <div
+                                className="bar-fill"
+                                style={{ height: `${pct}%` }}
+                                data-value={d.active_allocations}
+                              />
+                              <span className="bar-label">{d.department_name}</span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Column B: Maintenance Frequency SVG Trendline */}
                 <div className="chart-card">
                   <span className="chart-title">Maintenance Frequency</span>
-                  <div className="line-chart-container">
-                    {maintenanceAnalysis.length === 0 ? (
-                      <span style={{ color: "#64748b", fontSize: "0.8rem" }}>No maintenance requests filed</span>
-                    ) : (
-                      <svg viewBox="0 0 400 180">
-                        {/* Grid lines */}
-                        <line x1="10" y1="30" x2="390" y2="30" className="gridline" />
-                        <line x1="10" y1="90" x2="390" y2="90" className="gridline" />
-                        <line x1="10" y1="150" x2="390" y2="150" className="gridline" />
-                        
-                        {/* Graph Path */}
-                        <path
-                          className="trendpath"
-                          d={`M 20 130 
-                              L 80 80 
-                              L 140 120 
-                              L 200 60 
-                              L 260 90 
-                              L 320 40 
-                              L 380 30`}
-                        />
-                      </svg>
-                    )}
+                  <div className="chart-layout">
+                    <div className="y-axis">
+                      {(() => {
+                        const maxReq = maintenanceAnalysis.length > 0 ? Math.max(...maintenanceAnalysis.map(x => x.total_maintenance_requests), 1) : 1;
+                        return (
+                          <>
+                            <span>{maxReq}</span>
+                            <span>{Math.round(maxReq / 2)}</span>
+                            <span>0</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div className="bar-chart-container" style={{ paddingLeft: "10px", paddingRight: "10px" }}>
+                      {maintenanceAnalysis.length === 0 ? (
+                        <span style={{ color: "#64748b", fontSize: "0.8rem", margin: "auto" }}>No maintenance requests filed</span>
+                      ) : (
+                        maintenanceAnalysis.map(d => {
+                          const maxReq = Math.max(...maintenanceAnalysis.map(x => x.total_maintenance_requests), 1);
+                          const pct = Math.max(Math.min((d.total_maintenance_requests / maxReq) * 100, 100), 10);
+                          return (
+                            <div className="bar-column" key={d.asset_id} style={{ position: "relative" }}>
+                              <div
+                                className="bar-fill"
+                                style={{ height: `${pct}%`, backgroundColor: "#f59e0b" }}
+                                data-value={d.total_maintenance_requests}
+                                title={`${d.total_maintenance_requests} requests`}
+                              />
+                              <span className="bar-label">{d.asset_tag}</span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -405,7 +435,44 @@ export default function Reports() {
 
               </div>
 
-              {/* ── Row 3: Alerts due for maintenance / retirement ── */}
+              {/* ── Row 3: Resource Booking Heatmap ── */}
+              <div className="chart-card" style={{ marginTop: "24px" }}>
+                <span className="chart-title">Resource Booking Peak Usage (Heatmap)</span>
+                <div style={{ display: "grid", gridTemplateColumns: "50px repeat(7, 1fr)", gap: "4px", marginTop: "16px", overflowX: "auto" }}>
+                  {/* Empty top-left cell */}
+                  <div></div>
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                    <div key={day} style={{ textAlign: "center", color: "#94a3b8", fontSize: "0.8rem", fontWeight: "600", paddingBottom: "8px" }}>{day}</div>
+                  ))}
+                  
+                  {/* Hours (e.g. 8 to 18) */}
+                  {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(hour => {
+                    return (
+                      <React.Fragment key={hour}>
+                        <div style={{ color: "#94a3b8", fontSize: "0.8rem", textAlign: "right", paddingRight: "8px", alignSelf: "center" }}>{hour}:00</div>
+                        {[1, 2, 3, 4, 5, 6, 7].map(dayIndex => {
+                          const cellData = heatmapData.find(h => parseInt(h.day_of_week as any) === dayIndex && parseInt(h.start_hour as any) === hour);
+                          const count = cellData ? parseInt(cellData.booking_count as any) : 0;
+                          
+                          // Determine color intensity based on count
+                          let bg = "#1e293b"; // idle
+                          if (count > 0 && count <= 2) bg = "#3b82f6"; // light blue
+                          else if (count > 2 && count <= 5) bg = "#2563eb"; // med blue
+                          else if (count > 5) bg = "#1d4ed8"; // dark blue
+
+                          return (
+                            <div key={`${dayIndex}-${hour}`} style={{ backgroundColor: bg, height: "30px", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.05)", position: "relative" }} title={`${count} bookings`}>
+                               {count > 0 && <span style={{position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, -50%)", fontSize:"10px", color:"#fff", fontWeight: "bold"}}>{count}</span>}
+                            </div>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Row 4: Alerts due for maintenance / retirement ── */}
               <div className="alerts-card">
                 <span className="card-title">Assets due for maintenance / nearing retirement</span>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -445,6 +512,7 @@ export default function Reports() {
                     <option value="IDLE">Idle Assets List</option>
                     <option value="MAINTENANCE">Maintenance log History</option>
                     <option value="ALERTS">Retirement & Service Alerts</option>
+                    <option value="HEATMAP">Resource Booking Heatmap</option>
                   </select>
                   <select
                     className="cell-select" style={{ padding: "10px", width: "100px" }}

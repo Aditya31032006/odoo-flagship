@@ -97,6 +97,7 @@ export async function proxy(request: NextRequest) {
       requestHeaders.set("x-user-email", payload.email || "");
       requestHeaders.set("x-user-username", payload.username || "");
       requestHeaders.set("x-user-verified", String(payload.email_verified || payload.is_verified || false));
+      if (payload.role) requestHeaders.set("x-user-role", payload.role);
     }
     return NextResponse.next({
       request: {
