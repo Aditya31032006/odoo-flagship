@@ -135,6 +135,43 @@ export default function Dashboard() {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  // Dynamic headers based on user role
+  const getAllocatedLabel = () => {
+    if (user.role === "EMPLOYEE") return "My Allocated Assets";
+    if (user.role === "DEPARTMENT_HEAD") return "Dept Allocated Assets";
+    return "Allocated Assets";
+  };
+
+  const getBookingsLabel = () => {
+    if (user.role === "EMPLOYEE") return "My Active Bookings";
+    if (user.role === "DEPARTMENT_HEAD") return "Dept Active Bookings";
+    return "Active Bookings";
+  };
+
+  const getTransfersLabel = () => {
+    if (user.role === "EMPLOYEE") return "My Pending Transfers";
+    if (user.role === "DEPARTMENT_HEAD") return "Dept Pending Transfers";
+    return "Pending Transfers";
+  };
+
+  const getOverdueLabel = () => {
+    if (user.role === "EMPLOYEE") return "My Overdue Returns";
+    if (user.role === "DEPARTMENT_HEAD") return "Dept Overdue Returns";
+    return "Overdue Returns";
+  };
+
+  const getUpcomingLabel = () => {
+    if (user.role === "EMPLOYEE") return "My Upcoming Returns";
+    if (user.role === "DEPARTMENT_HEAD") return "Dept Upcoming Returns";
+    return "Upcoming Returns";
+  };
+
+  const getActivityLabel = () => {
+    if (user.role === "EMPLOYEE") return "My Recent Activity";
+    if (user.role === "DEPARTMENT_HEAD") return "Dept Recent Activity";
+    return "Recent Activity";
+  };
+
   return (
     <div className="dashboard-container">
       <ToastContainer position="top-right" autoClose={2000} theme="dark" />
@@ -162,31 +199,42 @@ export default function Dashboard() {
             </svg>
             <span>Dashboard</span>
           </Link>
-          <div className="menu-item">
+          <Link href="/organization-setup" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            <span>Organization Setup</span>
+          </Link>
+          <Link href="/assets" className="menu-item">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
             <span>Assets</span>
-          </div>
-          <div className="menu-item">
+          </Link>
+          <Link href="/allocation-transfer" className="menu-item">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
             <span>Allocation & Transfer</span>
-          </div>
-          <div className="menu-item">
+          </Link>
+          <Link href="/resource-booking" className="menu-item">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span>Resource Booking</span>
-          </div>
-          <div className="menu-item">
+          </Link>
+          <Link href="/maintenance" className="menu-item">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <span>Maintenance</span>
-          </div>
+          </Link>
+          <Link href="/audit" className="menu-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Audit</span>
+          </Link>
         </nav>
 
         <div className="sidebar-user">
@@ -239,7 +287,7 @@ export default function Dashboard() {
                   <span className="kpi-value">{kpis?.assets_available || "0"}</span>
                 </div>
                 <div className="kpi-card">
-                  <span className="kpi-title">Allocated Assets</span>
+                  <span className="kpi-title">{getAllocatedLabel()}</span>
                   <span className="kpi-value">{kpis?.assets_allocated || "0"}</span>
                 </div>
                 <div className="kpi-card">
@@ -247,12 +295,39 @@ export default function Dashboard() {
                   <span className="kpi-value">{kpis?.assets_under_maintenance || "0"}</span>
                 </div>
                 <div className="kpi-card">
-                  <span className="kpi-title">Active Bookings</span>
+                  <span className="kpi-title">{getBookingsLabel()}</span>
                   <span className="kpi-value">{kpis?.active_bookings || "0"}</span>
                 </div>
                 <div className="kpi-card">
-                  <span className="kpi-title">Pending Transfers</span>
+                  <span className="kpi-title">{getTransfersLabel()}</span>
                   <span className="kpi-value">{kpis?.pending_transfers || "0"}</span>
+                </div>
+              </section>
+
+              {/* ── Quick Action Shortcuts ── */}
+              <section className="panel-card" style={{ padding: "20px" }}>
+                <h3 className="panel-title" style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", marginBottom: "12px" }}>Quick Shortcuts</h3>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                  {(user.role === "ADMIN" || user.role === "ASSET_MANAGER") && (
+                    <button 
+                      onClick={() => toast.success("Opening Register Asset form (Assets table integration)...")} 
+                      style={{ background: "#48e5a0", color: "#070d19", border: "none", borderRadius: "6px", padding: "10px 16px", fontSize: "0.85rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+                    >
+                      <span>+</span> Register Asset
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => toast.success("Navigating to Resource Booking page...")}
+                    style={{ background: "transparent", border: "1px solid #162238", color: "#ffffff", borderRadius: "6px", padding: "10px 16px", fontSize: "0.85rem", fontWeight: "500", cursor: "pointer" }}
+                  >
+                    📅 Book Resource
+                  </button>
+                  <button 
+                    onClick={() => toast.success("Opening Raise Maintenance request dialog...")}
+                    style={{ background: "transparent", border: "1px solid #162238", color: "#ffffff", borderRadius: "6px", padding: "10px 16px", fontSize: "0.85rem", fontWeight: "500", cursor: "pointer" }}
+                  >
+                    🔧 Raise Maintenance Request
+                  </button>
                 </div>
               </section>
 
@@ -274,7 +349,7 @@ export default function Dashboard() {
                   {/* Overdue Returns Panel */}
                   <div className="panel-card">
                     <div className="panel-header">
-                      <h2 className="panel-title">Overdue Returns</h2>
+                      <h2 className="panel-title">{getOverdueLabel()}</h2>
                     </div>
                     <div className="panel-body">
                       {overdueReturns.length === 0 ? (
@@ -301,7 +376,7 @@ export default function Dashboard() {
                   {/* Upcoming Returns Panel */}
                   <div className="panel-card">
                     <div className="panel-header">
-                      <h2 className="panel-title">Upcoming Returns</h2>
+                      <h2 className="panel-title">{getUpcomingLabel()}</h2>
                     </div>
                     <div className="panel-body">
                       {upcomingReturns.length === 0 ? (
@@ -328,7 +403,7 @@ export default function Dashboard() {
                   {/* Active Bookings Panel */}
                   <div className="panel-card">
                     <div className="panel-header">
-                      <h2 className="panel-title">Active Bookings</h2>
+                      <h2 className="panel-title">{getBookingsLabel()}</h2>
                     </div>
                     <div className="panel-body">
                       {activeBookings.length === 0 ? (
@@ -356,7 +431,7 @@ export default function Dashboard() {
                 {/* Right Column: Recent Activity Feed */}
                 <div className="panel-card">
                   <div className="panel-header">
-                    <h2 className="panel-title">Recent Activity</h2>
+                    <h2 className="panel-title">{getActivityLabel()}</h2>
                   </div>
                   <div className="panel-body">
                     {activities.length === 0 ? (
