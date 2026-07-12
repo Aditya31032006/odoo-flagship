@@ -56,7 +56,14 @@ export const authService = {
    * Clears credentials to sign out
    */
   async logout(): Promise<void> {
-    // Clear cookies by setting maxAge to 0
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Backend logout failed:", error);
+    }
+    // Clear cookies by setting maxAge to 0 on the client side
     document.cookie = "accessToken=; Max-Age=0; path=/";
   }
 };

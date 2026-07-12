@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../../styles/dashboard.scss";
+import { authService } from "../../lib/services/authService";
 
 interface DashboardKPIs {
   assets_available: string;
@@ -119,8 +120,8 @@ export default function Dashboard() {
   }, []);
 
   // Logout Handlers
-  const handleLogout = () => {
-    document.cookie = "accessToken=; Max-Age=0; path=/";
+  const handleLogout = async () => {
+    await authService.logout();
     toast.success("Logged out successfully");
     setTimeout(() => {
       router.push("/login");
