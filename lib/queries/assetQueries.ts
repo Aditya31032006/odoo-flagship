@@ -126,7 +126,7 @@ export const assetQueries = {
   ) {
     return runQuery(
       executor,
-      `INSERT INTO asset_status_history (asset_id, from_status, to_status, notes, changed_by)
+      `INSERT INTO asset_status_history (asset_id, previous_status, new_status, reason, changed_by)
        VALUES ($1, $2, $3, $4, $5)`,
       [assetId, fromStatus, toStatus, notes, changedBy]
     );
@@ -194,15 +194,15 @@ export const assetQueries = {
       executor,
       `SELECT 
         cf.id AS custom_field_id,
-        cf.name AS field_name,
-        cf.field_type,
+        cf.field_name,
+        cf.data_type AS field_type,
         cf.is_required,
         val.text_value,
         val.number_value,
         val.date_value
       FROM category_custom_fields cf
       LEFT JOIN asset_custom_field_values val ON val.custom_field_id = cf.id AND val.asset_id = $1
-      WHERE cf.category_id = $2`,
+      WHERE cf.category_id = $2 AND cf.is_active = TRUE`,
       [assetId, categoryId]
     );
   },
@@ -210,7 +210,7 @@ export const assetQueries = {
   async getAssetDocuments(assetId: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `SELECT * FROM asset_documents WHERE asset_id = $1 ORDER BY created_at DESC`,
+      `SELECT *, uploaded_at AS created_at FROM asset_documents WHERE asset_id = $1 ORDER BY uploaded_at DESC`,
       [assetId]
     );
   },
@@ -218,7 +218,7 @@ export const assetQueries = {
   async getAssetAllocationHistory(assetId: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `SELECT aa.*, u.full_name as employee_name, d.name as department_name
+      `SELECT aa.*, aa.actual_returned_at AS returned_at, u.full_name as employee_name, d.name as department_name
        FROM asset_allocations aa
        LEFT JOIN users u ON aa.employee_id = u.id
        LEFT JOIN departments d ON aa.department_id = d.id
@@ -233,7 +233,7 @@ export const assetQueries = {
       executor,
       `SELECT mr.*, u.full_name as technician_name
        FROM maintenance_requests mr
-       LEFT JOIN users u ON mr.technician_user_id = u.id
+       LEFT JOIN users u ON mr.assigned_technician_id = u.id
        WHERE mr.asset_id = $1
        ORDER BY mr.created_at DESC`,
       [assetId]
@@ -243,11 +243,19 @@ export const assetQueries = {
   async getAssetStatusHistory(assetId: number, executor: any = defaultQuery) {
     return runQuery(
       executor,
-      `SELECT ash.*, u.full_name as changed_by_name
+      `SELECT 
+        ash.id, 
+        ash.asset_id, 
+        ash.previous_status AS from_status, 
+        ash.new_status AS to_status, 
+        ash.reason AS notes, 
+        ash.changed_by, 
+        ash.changed_at AS created_at,
+        u.full_name as changed_by_name
        FROM asset_status_history ash
        LEFT JOIN users u ON ash.changed_by = u.id
        WHERE ash.asset_id = $1
-       ORDER BY ash.created_at DESC`,
+       ORDER BY ash.changed_at DESC`,
       [assetId]
     );
   }

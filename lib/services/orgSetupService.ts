@@ -163,5 +163,32 @@ export const orgSetupService = {
   async updateEmployeeStatus(userId: number, status: string) {
     await orgSetupQueries.updateEmployeeStatus(userId, status);
     return { success: true };
+  },
+
+  // ── Locations ─────────────────────────────────────────────
+  async getLocations() {
+    const res = await orgSetupQueries.getLocations();
+    return res.rows;
+  },
+
+  async createLocation(name: string, code: string, address: string, parentId: number | null, createdBy: number) {
+    if (!name || !code) {
+      throw new Error("Location Name and Code are required.");
+    }
+    const res = await orgSetupQueries.createLocation(name, code, address, parentId, createdBy);
+    return res.rows[0];
+  },
+
+  async updateLocation(id: number, name: string, code: string, address: string, parentId: number | null) {
+    if (id === parentId) {
+      throw new Error("A location cannot be its own parent.");
+    }
+    await orgSetupQueries.updateLocation(id, name, code, address, parentId);
+    return { success: true };
+  },
+
+  async updateLocationStatus(id: number, isActive: boolean) {
+    await orgSetupQueries.updateLocationStatus(id, isActive);
+    return { success: true };
   }
 };

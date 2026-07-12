@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
@@ -108,60 +108,63 @@ export default function Assets() {
 
   // QR Camera Scanner States & Handlers
   const [showScannerModal, setShowScannerModal] = useState(false);
-  const [scannerInstance, setScannerInstance] = useState<any>(null);
+  const scannerRef = useRef<any>(null);
+  const scannerRunningRef = useRef(false);
+
+  const stopScanner = async () => {
+    if (scannerRef.current && scannerRunningRef.current) {
+      try {
+        await scannerRef.current.stop();
+      } catch {
+        // ignore - scanner may already be stopped
+      }
+      scannerRunningRef.current = false;
+    }
+    scannerRef.current = null;
+  };
 
   const startScanner = async () => {
     try {
       setTimeout(async () => {
         const { Html5Qrcode } = await import("html5-qrcode");
         const html5QrCode = new Html5Qrcode("qr-reader");
-        setScannerInstance(html5QrCode);
+        scannerRef.current = html5QrCode;
 
         await html5QrCode.start(
           { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
-          (decodedText) => {
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText: string) => {
             toast.success("QR code scanned successfully!");
             const parts = decodedText.split("/");
             const assetTag = parts[parts.length - 1];
 
-            html5QrCode.stop().then(() => {
-              setShowScannerModal(false);
-              fetch(`/api/assets`)
-                .then(res => res.json())
-                .then(data => {
-                  const matchedAsset = data.find((a: any) => a.asset_tag === assetTag);
-                  if (matchedAsset) {
-                    openAssetDetails(matchedAsset.id);
-                  } else {
-                    toast.error(`Asset tag ${assetTag} not found in directory.`);
-                  }
-                });
-            }).catch(err => {
-              console.error("Failed to stop scanner", err);
-              setShowScannerModal(false);
-            });
+            scannerRunningRef.current = false;
+            html5QrCode.stop()
+              .then(() => {
+                scannerRef.current = null;
+                setShowScannerModal(false);
+                fetch(`/api/assets`)
+                  .then(res => res.json())
+                  .then(data => {
+                    const matchedAsset = data.find((a: any) => a.asset_tag === assetTag);
+                    if (matchedAsset) {
+                      openAssetDetails(matchedAsset.id);
+                    } else {
+                      toast.error(`Asset tag ${assetTag} not found in directory.`);
+                    }
+                  });
+              })
+              .catch(() => {
+                scannerRef.current = null;
+                setShowScannerModal(false);
+              });
           },
           () => {}
         );
+        scannerRunningRef.current = true;
       }, 300);
     } catch (err: any) {
-      console.error(err);
       toast.error("Camera access failed: " + err.message);
-    }
-  };
-
-  const stopScanner = async () => {
-    if (scannerInstance) {
-      try {
-        await scannerInstance.stop();
-      } catch (err) {
-        console.error(err);
-      }
-      setScannerInstance(null);
     }
   };
 
@@ -848,17 +851,82 @@ export default function Assets() {
 
                       {/* QR Lookup Section */}
                       <div className="qr-code-section" style={{ display: "flex", gap: "16px", alignItems: "center", borderTop: "1px solid #162238", paddingTop: "16px", marginTop: "10px" }}>
-                        <div className="qr-code-box" style={{ background: "#ffffff", padding: "8px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", width: "100px", height: "100px" }}>
+                        <div className="qr-code-box" style={{ background: "#ffffff", padding: "8px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", width: "100px", height: "100px", flexShrink: 0 }}>
                           <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(assetDetails.details.qr_code_value)}`} 
+                            id="qr-label-img"
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(assetDetails.details.qr_code_value)}`} 
                             alt="QR Code"
                             style={{ width: "84px", height: "84px" }}
                           />
                         </div>
-                        <div className="qr-info">
+                        <div className="qr-info" style={{ flex: 1 }}>
                           <h4 style={{ fontSize: "0.85rem", color: "#ffffff", fontWeight: "600" }}>QR Scan Value</h4>
                           <p style={{ fontFamily: "monospace", color: "#48e5a0", fontSize: "0.8rem", margin: "2px 0 6px 0" }}>{assetDetails.details.qr_code_value}</p>
-                          <p style={{ fontSize: "0.75rem", color: "#64748b" }}>Scanning directly routes the lookup process to this asset profile detail modal.</p>
+                          <p style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "10px" }}>Scanning directly routes the lookup process to this asset profile detail modal.</p>
+                          <button
+                            onClick={() => {
+                              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(assetDetails.details.qr_code_value)}`;
+                              const win = window.open("", "_blank", "width=400,height=520");
+                              if (!win) return;
+                              win.document.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                  <title>QR Label — ${assetDetails.details.asset_tag}</title>
+                                  <style>
+                                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                                    body { 
+                                      font-family: 'Arial', sans-serif; 
+                                      display: flex; align-items: center; justify-content: center; 
+                                      min-height: 100vh; background: #f0f0f0;
+                                    }
+                                    .label {
+                                      background: white;
+                                      border: 2px solid #000;
+                                      border-radius: 8px;
+                                      padding: 20px;
+                                      text-align: center;
+                                      width: 320px;
+                                      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                                    }
+                                    .brand { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #555; margin-bottom: 12px; }
+                                    .qr-img { width: 200px; height: 200px; margin: 0 auto 14px; display: block; }
+                                    .asset-name { font-size: 18px; font-weight: 700; color: #111; margin-bottom: 4px; }
+                                    .asset-tag { font-size: 13px; font-family: monospace; color: #444; background: #f5f5f5; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 4px; }
+                                    .asset-id { font-size: 12px; color: #666; margin-bottom: 14px; }
+                                    .scan-hint { font-size: 10px; color: #888; border-top: 1px dashed #ccc; padding-top: 10px; }
+                                    @media print {
+                                      body { background: white; }
+                                      .label { box-shadow: none; }
+                                      .no-print { display: none !important; }
+                                    }
+                                  </style>
+                                </head>
+                                <body>
+                                  <div class="label">
+                                    <div class="brand">⬡ AssetFlow</div>
+                                    <img class="qr-img" src="${qrUrl}" alt="QR" />
+                                    <div class="asset-name">${assetDetails.details.name}</div>
+                                    <div class="asset-tag">${assetDetails.details.asset_tag}</div>
+                                    <div class="asset-id">ID: ${assetDetails.details.serial_number} &nbsp;|&nbsp; ${assetDetails.details.category_name || ""}</div>
+                                    <div class="scan-hint">Scan with AssetFlow app to view full asset profile</div>
+                                    <br/>
+                                    <button class="no-print" onclick="window.print()" style="padding:8px 20px;background:#000;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px;">🖨️ Print Label</button>
+                                  </div>
+                                </body>
+                                </html>
+                              `);
+                              win.document.close();
+                            }}
+                            style={{ 
+                              background: "linear-gradient(135deg, #1de9b6, #00b0ff)", 
+                              border: "none", color: "#000", fontWeight: "600",
+                              padding: "7px 16px", borderRadius: "6px", cursor: "pointer",
+                              fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "6px"
+                            }}
+                          >
+                            🖨️ Print QR Label
+                          </button>
                         </div>
                       </div>
                     </div>

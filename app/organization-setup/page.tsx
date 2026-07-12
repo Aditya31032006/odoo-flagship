@@ -47,19 +47,30 @@ interface Employee {
   department_name: string | null;
 }
 
+interface LocationItem {
+  id: string;
+  name: string;
+  code: string;
+  address_line_1: string | null;
+  parent_location_id: string | null;
+  parent_name: string | null;
+  is_active: boolean;
+}
+
 export default function OrganizationSetup() {
   const router = useRouter();
   
   // Auth & UI States
   const [currentUser, setCurrentUser] = useState<{ fullName: string; role: string } | null>(null);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<"departments" | "categories" | "employees">("departments");
+  const [activeTab, setActiveTab] = useState<"departments" | "categories" | "employees" | "locations">("departments");
   const [loading, setLoading] = useState(true);
 
   // Data States
   const [departments, setDepartments] = useState<Department[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [locations, setLocations] = useState<LocationItem[]>([]);
 
   // Modals States
   const [showDeptModal, setShowDeptModal] = useState(false);
@@ -70,6 +81,10 @@ export default function OrganizationSetup() {
   const [editingCat, setEditingCat] = useState<Category | null>(null);
   const [catForm, setCatForm] = useState({ name: "", code: "", description: "" });
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+
+  const [showLocModal, setShowLocModal] = useState(false);
+  const [editingLoc, setEditingLoc] = useState<LocationItem | null>(null);
+  const [locForm, setLocForm] = useState({ name: "", code: "", address: "", parent_location_id: "" });
 
   // Auth decoding check
   useEffect(() => {
@@ -112,15 +127,17 @@ export default function OrganizationSetup() {
     if (!authorized) return;
     try {
       setLoading(true);
-      const [deptRes, catRes, empRes] = await Promise.all([
+      const [deptRes, catRes, empRes, locRes] = await Promise.all([
         fetch("/api/org-setup/departments"),
         fetch("/api/org-setup/categories"),
-        fetch("/api/org-setup/employees")
+        fetch("/api/org-setup/employees"),
+        fetch("/api/org-setup/locations")
       ]);
 
       if (deptRes.ok) setDepartments(await deptRes.json());
       if (catRes.ok) setCategories(await catRes.json());
       if (empRes.ok) setEmployees(await empRes.json());
+      if (locRes.ok) setLocations(await locRes.json());
     } catch (err) {
       toast.error("Failed to load setup data");
     } finally {
@@ -353,6 +370,70 @@ export default function OrganizationSetup() {
     }
   };
 
+  // ── Tab D: Location Operations ──
+  const openAddLoc = () => {
+    setEditingLoc(null);
+    setLocForm({ name: "", code: "", address: "", parent_location_id: "" });
+    setShowLocModal(true);
+  };
+
+  const openEditLoc = (loc: LocationItem) => {
+    setEditingLoc(loc);
+    setLocForm({
+      name: loc.name,
+      code: loc.code,
+      address: loc.address_line_1 || "",
+      parent_location_id: loc.parent_location_id || ""
+    });
+    setShowLocModal(true);
+  };
+
+  const saveLoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const isEdit = !!editingLoc;
+      const url = "/api/org-setup/locations";
+      const method = isEdit ? "PUT" : "POST";
+      const payload = isEdit 
+        ? { id: editingLoc.id, ...locForm }
+        : locForm;
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to save location");
+      }
+
+      toast.success(isEdit ? "Location updated" : "Location created");
+      setShowLocModal(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const toggleLocStatus = async (loc: LocationItem) => {
+    try {
+      const newStatus = !loc.is_active;
+      const res = await fetch("/api/org-setup/locations", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: loc.id, is_active: newStatus })
+      });
+
+      if (!res.ok) throw new Error("Failed to toggle status");
+      toast.success(`Location is now ${newStatus ? "active" : "inactive"}`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
   // Render Access Denied
   if (authorized === false) {
     return (
@@ -488,6 +569,9 @@ export default function OrganizationSetup() {
               <button className={`tab-btn ${activeTab === "employees" ? "active" : ""}`} onClick={() => setActiveTab("employees")}>
                 Employee Directory
               </button>
+              <button className={`tab-btn ${activeTab === "locations" ? "active" : ""}`} onClick={() => setActiveTab("locations")}>
+                Locations
+              </button>
             </div>
 
             {activeTab === "departments" && (
@@ -499,6 +583,12 @@ export default function OrganizationSetup() {
             {activeTab === "categories" && (
               <button className="add-action-btn" onClick={openAddCat}>
                 + Add Category
+              </button>
+            )}
+
+            {activeTab === "locations" && (
+              <button className="add-action-btn" onClick={openAddLoc}>
+                + Add Location
               </button>
             )}
           </div>
@@ -676,6 +766,52 @@ export default function OrganizationSetup() {
                   </div>
                 </div>
               )}
+
+              {/* ── TAB D: Locations Table ── */}
+              {activeTab === "locations" && (
+                <div className="table-card">
+                  <div className="table-responsive">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Location Name</th>
+                          <th>Location Code</th>
+                          <th>Parent Location</th>
+                          <th>Address</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {locations.map((loc) => (
+                          <tr key={loc.id}>
+                            <td className="row-title">{loc.name}</td>
+                            <td>{loc.code}</td>
+                            <td>{loc.parent_name || "---"}</td>
+                            <td>{loc.address_line_1 || "---"}</td>
+                            <td>
+                              <span 
+                                className={`status-pill ${loc.is_active ? "active" : "inactive"}`}
+                                onClick={() => toggleLocStatus(loc)}
+                              >
+                                {loc.is_active ? "ACTIVE" : "INACTIVE"}
+                              </span>
+                            </td>
+                            <td>
+                              <button 
+                                onClick={() => openEditLoc(loc)}
+                                style={{ background: "transparent", border: "1px solid #162238", color: "#48e5a0", cursor: "pointer", padding: "6px 12px", borderRadius: "4px", fontSize: "0.8rem" }}
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -818,6 +954,68 @@ export default function OrganizationSetup() {
               </div>
               <footer className="modal-footer">
                 <button type="button" className="cancel-btn" onClick={() => setShowCatModal(false)}>Cancel</button>
+                <button type="submit" className="submit-btn">Save</button>
+              </footer>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ── Locations Add/Edit Modal ── */}
+      {showLocModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <header className="modal-header">
+              <h3>{editingLoc ? "Edit Location" : "Add Location"}</h3>
+              <button className="close-btn" onClick={() => setShowLocModal(false)}>×</button>
+            </header>
+            <form onSubmit={saveLoc}>
+              <div className="modal-body">
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Location Name</label>
+                  <input 
+                    type="text" 
+                    required
+                    style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
+                    value={locForm.name} 
+                    onChange={e => setLocForm({...locForm, name: e.target.value})} 
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Location Code</label>
+                  <input 
+                    type="text" 
+                    required
+                    style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
+                    value={locForm.code} 
+                    onChange={e => setLocForm({...locForm, code: e.target.value})} 
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Address</label>
+                  <input 
+                    type="text" 
+                    style={{ background: "#090f1d", border: "1px solid #162238", borderRadius: "6px", color: "#ffffff", padding: "10px", outline: "none", fontSize: "0.85rem" }}
+                    value={locForm.address} 
+                    onChange={e => setLocForm({...locForm, address: e.target.value})} 
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "0.8rem", color: "#64748b" }}>Parent Location</label>
+                  <select 
+                    className="cell-select"
+                    style={{ padding: "10px", width: "100%" }}
+                    value={locForm.parent_location_id} 
+                    onChange={e => setLocForm({...locForm, parent_location_id: e.target.value})}
+                  >
+                    <option value="">--- None (Root Level) ---</option>
+                    {locations.filter(l => !editingLoc || l.id !== editingLoc.id).map(l => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <footer className="modal-footer">
+                <button type="button" className="cancel-btn" onClick={() => setShowLocModal(false)}>Cancel</button>
                 <button type="submit" className="submit-btn">Save</button>
               </footer>
             </form>

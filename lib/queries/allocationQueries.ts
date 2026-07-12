@@ -73,7 +73,7 @@ export const allocationQueries = {
   ) {
     return runQuery(
       executor,
-      `INSERT INTO asset_status_history (asset_id, from_status, to_status, notes, changed_by)
+      `INSERT INTO asset_status_history (asset_id, previous_status, new_status, reason, changed_by)
        VALUES ($1, $2, $3, $4, $5)`,
       [assetId, fromStatus, toStatus, notes, changedBy]
     );
