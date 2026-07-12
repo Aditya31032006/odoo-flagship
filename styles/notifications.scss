@@ -1,0 +1,233 @@
+// ── Notifications & Activity Logs SCSS Style System ────────
+// High-fidelity dark mode style layout definitions
+
+$bg-page:        #070d19;
+$bg-card:        #0b1222;
+$border-color:   #162238;
+$accent-green:   #48e5a0;
+$text-title:     #ffffff;
+$text-body:      #94a3b8;
+$text-muted:     #64748b;
+
+.notifications-content {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// ── Tab Navigation Header ──
+.notif-tab-nav {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid $border-color;
+  padding-bottom: 8px;
+
+  button {
+    background: none;
+    border: none;
+    color: $text-muted;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 12px;
+    position: relative;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #ffffff;
+    }
+
+    &.active {
+      color: $accent-green;
+
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -9px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: $accent-green;
+      }
+    }
+  }
+}
+
+// ── Category Pills Filter Row ──
+.category-filter-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .filter-pill {
+    background-color: #090f1d;
+    border: 1px solid $border-color;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    color: $text-body;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $text-body;
+      color: #ffffff;
+    }
+
+    &.active {
+      background-color: rgba(72, 229, 160, 0.1);
+      border-color: $accent-green;
+      color: $accent-green;
+      box-shadow: 0 0 8px rgba(72, 229, 160, 0.2);
+    }
+  }
+}
+
+// ── Notifications Checklist Rows ──
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .notif-row {
+    background-color: $bg-card;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $accent-green;
+      transform: translateY(-1px);
+    }
+
+    &.read {
+      opacity: 0.6;
+    }
+
+    .notif-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      // Color indicators
+      .notif-color-box {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+
+        &.allocations { background-color: #3b82f6; }
+        &.maintenance { background-color: #10b981; }
+        &.bookings    { background-color: #06b6d4; }
+        &.transfers   { background-color: #ef4444; }
+        &.overdue     { background-color: #f59e0b; }
+        &.audit       { background-color: #d97706; }
+        &.system      { background-color: #64748b; }
+      }
+
+      .notif-message {
+        font-size: 0.85rem;
+        color: #ffffff;
+      }
+    }
+
+    .notif-time {
+      font-size: 0.75rem;
+      color: $text-muted;
+      white-space: nowrap;
+    }
+  }
+}
+
+// ── Admin Audit Timeline ──
+.audit-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  .timeline-item {
+    background-color: $bg-card;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $text-body;
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .item-action-tag {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 0.75rem;
+        color: $accent-green;
+        background-color: rgba(72, 229, 160, 0.08);
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+
+      .item-time {
+        font-size: 0.75rem;
+        color: $text-muted;
+      }
+    }
+
+    .item-desc {
+      font-size: 0.85rem;
+      color: #ffffff;
+    }
+
+    .item-meta {
+      font-size: 0.7rem;
+      color: $text-muted;
+      display: flex;
+      gap: 20px;
+    }
+
+    // Detailed JSON Collapsible diff block
+    .json-diff-container {
+      margin-top: 10px;
+      border-top: 1px dashed $border-color;
+      padding-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      label {
+        font-size: 0.75rem;
+        color: $text-muted;
+        font-weight: 600;
+      }
+
+      pre {
+        background-color: #070d19;
+        color: #f87171;
+        font-size: 0.75rem;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+        border: 1px solid $border-color;
+
+        &.new-val {
+          color: #4ade80;
+        }
+      }
+    }
+  }
+}
